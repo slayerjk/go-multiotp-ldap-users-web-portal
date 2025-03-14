@@ -1,0 +1,11 @@
+# ignore all
+*
+
+# except
+!README.md
+!.gitignore
+!go.mod
+
+!cmd/multiotp-ldap-users-web-portal/main.go
+
+!internal/qrwork/qrwork.go
