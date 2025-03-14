@@ -9,3 +9,4 @@
 !cmd/multiotp-ldap-users-web-portal/main.go
 
 !internal/qrwork/qrwork.go
+!internal/multiotp/multiotp.go
