@@ -10,3 +10,10 @@
 
 !internal/qrwork/qrwork.go
 !internal/multiotp/multiotp.go
+
+!ui/efs.go
+!ui/html/**.tmpl
+!ui/static/css/main.css
+!ui/static/img/favicon.ico
+!ui/static/img/logo.png
+!ui/static/js/main.js
