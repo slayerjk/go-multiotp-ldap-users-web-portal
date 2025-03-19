@@ -25,7 +25,8 @@ func (app *application) routes() http.Handler {
 	protected := dynamic.Append(app.requireAuthentication)
 
 	mux.Handle("POST /user/logout", protected.ThenFunc(app.userLogoutPost))
-	mux.Handle("GET /qrview", protected.ThenFunc(app.qrView))
+	mux.Handle("GET /qr/view", protected.ThenFunc(app.qrView))
+	mux.Handle("POST /qr/reissue", protected.ThenFunc(app.qrView))
 
 	// for all pages
 	standard := alice.New(app.recoverPanic, app.logRequest, commonHeaders)

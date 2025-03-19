@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -66,8 +67,10 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		// the chain are executed.
 		if !app.isAuthenticated(r) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			fmt.Println("FALSE")
 			return
 		}
+		fmt.Println("TRUE")
 
 		// Otherwise set the "Cache-Control: no-store" header so that pages
 		// require authentication are not stored in the users browser cache (or
@@ -120,6 +123,9 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		// 	ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
 		// 	r = r.WithContext(ctx)
 		// }
+
+		ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+		r = r.WithContext(ctx)
 
 		// Call the next handler in the chain.
 		next.ServeHTTP(w, r)
