@@ -1,53 +1,169 @@
 package main
 
 import (
+	"crypto/tls"
+	"database/sql"
 	"flag"
 	"fmt"
+	"html/template"
+	"log/slog"
+	"net/http"
 	"os"
+	"time"
 
-	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/multiotp"
-	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/qrwork"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
+	"github.com/go-playground/form/v4"
+	"github.com/slayerjk/go-vafswork"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-func main() {
-	// FLAGS for
-	// multiOTP users dir with *.db files
+const appName = "OTP-Portal"
 
-	multiOTPBinPath := flag.String("m", "c:/MultiOTP/windows/multiotp.exe", "Full path to MulitOTP binary")
+type application struct {
+	logger         *slog.Logger
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
+}
+
+func main() {
+	var (
+		workDir         string = vafswork.GetExePath()
+		logsPathDefault string = workDir + "/logs" + "_" + appName
+		tlsCertDefault  string = workDir + "/tls" + "/" + "cert.pem"
+		tlsKeyDefault   string = workDir + "/tls" + "/" + "key.pem"
+	)
+
+	// checking os env exists for OTP_DB_USR & OTP_DB_PASS
+	dbUsr := os.Getenv("OTP_DB_USR")
+	dbPass := os.Getenv("OTP_DB_PASS")
+	if len(dbUsr) == 0 || len(dbPass) == 0 {
+		fmt.Println("OTP_DB_USR and/or OTP_DB_PASS not found in OS env! exiting")
+		os.Exit(1)
+	}
+
+	// setting flags
+	logsDir := flag.String("log-dir", logsPathDefault, "set custom log dir")
+	logsToKeep := flag.Int("keep-logs", 7, "set number of logs to keep after rotation")
+	addr := flag.String("addr", ":3000", "HTTP server address, ex. ':3000' for localhost:3000")
+	tlsCert := flag.String("tls-cert", tlsCertDefault, "full path to tls Cert file")
+	tlsKey := flag.String("tls-key", tlsKeyDefault, "full path to tls Key file")
+	dbName := flag.String("db", "otpportal", "MySQL db name")
+	// multiOTPBinPath := flag.String("m", "c:/MultiOTP/windows/multiotp.exe", "Full path to MulitOTP binary")
+	// ldapBaseDN := flag.String("b", "dc=example,dc=com", "Base DN for LDAP Domain")
+
+	flag.Usage = func() {
+		fmt.Println("MultiOTP Web Portal for LDAP Users")
+		fmt.Println("Version = x.x.x")
+		// fmt.Println("Usage: <app> [-opt] ...")
+		fmt.Println("Flags:")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
-	user := "marchenm"
-
-	// TEST ONLY!!!
-	// del multiOTP user
-	err := multiotp.DelMultiOTPUser(user, *multiOTPBinPath)
-	if err != nil {
-		fmt.Printf("failed to del user:\n\t%v", err)
+	// create logs dir
+	if err := os.MkdirAll(*logsDir, os.ModePerm); err != nil {
+		fmt.Fprintf(os.Stdout, "failed to create log dir %s:\n\t%v", *logsDir, err)
 		os.Exit(1)
 	}
-	fmt.Printf("%s deleted or doesn't exist\n", user)
 
-	// resync multiOTP users
-	err = multiotp.ResyncMultiOTPUsers(*multiOTPBinPath)
+	// set current date
+	dateNow := time.Now().Format("02.01.2006")
+
+	// create log file
+	logFilePath := fmt.Sprintf("%s/%s_%s.log", *logsDir, appName, dateNow)
+	// open logFile in Append mode
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Printf("failed to resync users:\n\t%v", err)
+		fmt.Fprintf(os.Stdout, "failed to open created log file %s:\n\t%v", logFilePath, err)
 		os.Exit(1)
 	}
-	fmt.Println("successfully resynced users")
+	defer logFile.Close()
 
-	// get TOTP URL for user
-	totpURL, err := multiotp.GetMultiOTPTokenURL(user, *multiOTPBinPath)
+	// set slog.Logger
+	logger := slog.New(slog.NewTextHandler(logFile, nil))
+
+	// setting dsn using OTP_DB_USR, OTP_DB_PASS and dbName
+	dsn := fmt.Sprintf("%s:%s@/%s?parseTime=true", dbUsr, dbPass, *dbName)
+	// try to open db
+	db, err := openDB(dsn)
 	if err != nil {
-		fmt.Printf("failed to get totpURL for %s:\n\t%v", user, err)
+		logger.Error(err.Error())
+	}
+	defer db.Close()
+
+	// Initialize a new template cache...
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
-	fmt.Printf("got totpURL for %s\n", user)
 
-	// generate QR SVG
-	_, err = qrwork.GenerateTOTPSvgQR(totpURL, ".", "TEST")
-	if err != nil {
-		fmt.Printf("failed to gen QR:\n\t%v", err)
-		os.Exit(1)
+	// Init session manager
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
+
+	// Initialize a decoder instance...
+	formDecoder := form.NewDecoder()
+
+	// define app
+	app := &application{
+		logger:         logger,
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
-	fmt.Printf("QR for %s is successfully generated\n", user)
+
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
+	srv := &http.Server{
+		Addr:         *addr,
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		Handler:      app.routes(),
+	}
+
+	// starting program notification
+	logger.Info("Program started", "appName", appName)
+
+	// rotate log first
+	logger.Info("Log rotation first", "logsDir", *logsDir, "logs to keep", *logsToKeep)
+	if err := vafswork.RotateFilesByMtime(*logsDir, *logsToKeep); err != nil {
+		fmt.Fprintf(os.Stdout, "failed to rotate logs:\n\t%v", err)
+	}
+
+	// starting http srv info
+	logger.Info("starting server", slog.Any("addr", *addr))
+
+	// starting HTTP server
+	err = srv.ListenAndServeTLS(*tlsCert, *tlsKey)
+	logger.Error(err.Error())
+	os.Exit(1)
+
+}
+
+// The openDB() function wraps sql.Open() and returns a sql.DB connection pool
+// for a given DSN.
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.Ping()
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	return db, nil
 }

@@ -12,7 +12,10 @@ import (
 // a 'compiled' regexp.Regexp type, or panics in the event of an error. Parsing
 // this pattern once at startup and storing the compiled *regexp.Regexp in a
 // variable is more performant than re-parsing the pattern each time we need it.
-var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+// var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+// regexp to validate 'login' form field
+var LoginRX = regexp.MustCompile(`^[a-zA-Z]{1,}[\._]*[a-zA-Z]+$`)
 
 // Define a new Validator struct which contains a map of validation error messages
 // for our form fields.

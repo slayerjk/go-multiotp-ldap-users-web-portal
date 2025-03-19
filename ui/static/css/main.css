@@ -226,6 +226,14 @@ button:hover {
     border-radius: 3px;
 }
 
+.qr {
+    background-color: #FFFFFF;
+    border: 1px solid #E4E5E7;
+    border-radius: 3px;
+    height: 200px;
+    width: 200px;
+}
+
 .snippet pre {
     padding: 18px;
     border-top: 1px solid #E4E5E7;

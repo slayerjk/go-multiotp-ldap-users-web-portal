@@ -1,0 +1,11 @@
+{{define "title"}}Ваш QR{{end}}
+
+{{define "main"}}
+    {{if .QR}}
+    <div class="qr">
+        {{.QR}}
+    </div>
+    {{else}}
+    <span>NO QR FOUND!!!</span>
+    {{end}}
+{{end}}

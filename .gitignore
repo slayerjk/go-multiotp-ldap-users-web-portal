@@ -7,9 +7,18 @@
 !go.mod
 
 !cmd/multiotp-ldap-users-web-portal/main.go
+!cmd/multiotp-ldap-users-web-portal/handlers.go
+!cmd/multiotp-ldap-users-web-portal/middleware.go
+!cmd/multiotp-ldap-users-web-portal/routes.go
+!cmd/multiotp-ldap-users-web-portal/templates.go
+!cmd/multiotp-ldap-users-web-portal/context.go
+!cmd/multiotp-ldap-users-web-portal/helpers.go
 
 !internal/qrwork/qrwork.go
 !internal/multiotp/multiotp.go
+!internal/validator/validator.go
+!internal/models/users.go
+!internal/models/errors.go
 
 !ui/efs.go
 !ui/html/**.tmpl
