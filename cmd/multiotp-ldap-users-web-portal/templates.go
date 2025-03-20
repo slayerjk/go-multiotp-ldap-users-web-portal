@@ -22,6 +22,7 @@ type templateData struct {
 	IsAuthenticated bool
 	CSRFToken       string
 	QR              template.HTML // must be <svg> code chunc to insert in template
+	Username        string
 }
 
 // Create a humanDate function which returns a nicely formatted string

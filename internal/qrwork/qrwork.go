@@ -2,20 +2,17 @@ package qrwork
 
 import (
 	"bytes"
-	"html/template"
+	"fmt"
 
 	go_qr "github.com/piglig/go-qr"
 )
 
-// Generate QR svg file and return template.HTML value(<svg> code)
-func GenerateTOTPSvgQrHTML(totpURL []byte) (template.HTML, error) {
-	// temp var to write/read svg
+// Generate QR svg file and return string value of <svg> code
+func GenerateTOTPSvgQrHTML(totpURL []byte) (string, error) {
 	var (
 		buf    bytes.Buffer
-		result template.HTML
+		result string
 	)
-
-	// svgFilePath := pathToSaveQR + "/" + qrFileName + ".svg"
 
 	// Encode & Generate QR
 	errCorLvl := go_qr.Low
@@ -24,11 +21,6 @@ func GenerateTOTPSvgQrHTML(totpURL []byte) (template.HTML, error) {
 		return result, err
 	}
 	config := go_qr.NewQrCodeImgConfig(10, 4)
-
-	// err = qr.SVG(config, qrFileName+".svg", "#FFFFFF", "#000000")
-	// if err != nil {
-	// 	return svgFilePath, err
-	// }
 
 	// write svg code to buffer
 	err = qr.WriteAsSVG(config, &buf, "#FFFFFF", "#000000")
@@ -39,17 +31,12 @@ func GenerateTOTPSvgQrHTML(totpURL []byte) (template.HTML, error) {
 	// read from buffer
 	data := make([]byte, buf.Len())
 	buf.Read(data)
-	result = template.HTML(string(data))
 
-	// svg regexp pattern(search subexpression between <svg> and </svg>)
-	// svgContentRegexp := regexp.MustCompile(`^<(svg .*?)>\W(.*\W.*)\W<\/svg>$`)
-	// svgContent := svgContentRegexp.FindStringSubmatch(string(data))
-	// fmt.Println(svgContent)
-
-	// err = qr.SVG(go_qr.NewQrCodeImgConfig(10, 4, go_qr.WithSVGXMLHeader(true)), "hello-world-QR-xml-header.svg", "#FFFFFF", "#000000")
-	// if err != nil {
-	// 	return result, err
-	// }
+	// set result and check if empty
+	result = string(data)
+	if len(result) == 0 {
+		return result, fmt.Errorf("empty result of generating svg")
+	}
 
 	return result, nil
 }

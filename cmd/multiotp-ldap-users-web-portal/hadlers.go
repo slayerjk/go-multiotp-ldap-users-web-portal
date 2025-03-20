@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/multiotp"
@@ -85,38 +86,30 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, r, fmt.Errorf("no accName found"))
 		return
 	}
-	// fmt.Println(accName)
-
-	// get QR svg code for user
-	// qrFile, err := os.Open("TEST.svg")
-	// if err != nil {
-	// 	app.logger.Error("failed to open svg")
-	// 	return
-	// }
-	// defer qrFile.Close()
-
-	// qr, err := io.ReadAll(qrFile)
-	// if err != nil {
-	// 	app.logger.Error("failed to read svg")
-	// 	return
-	// }
-
-	// data.QR = qr
-	// data.QR = "HELLO!"
+	data.Username = accName
 
 	// get totpURL
 	totpURL, err := multiotp.GetMultiOTPTokenURL(accName, *app.multiOTPBinPath)
 	if err != nil {
-		app.serverError(w, r, fmt.Errorf("failed to get totpURL:\n\t%v", err))
+		// app.serverError(w, r, fmt.Errorf("failed to get totpURL:\n\t%v", err))
+		app.logger.Warn("failed to find totpURL", "user", accName)
+		// render view.tmpl with empty QR
+		app.render(w, r, http.StatusOK, "view.tmpl", data)
 		return
 	}
 
 	// get QR svg content(between <svg> tags)
 	qr, err := qrwork.GenerateTOTPSvgQrHTML(totpURL)
 	if err != nil {
-		app.serverError(w, r, fmt.Errorf("failed to get qr for %s:\n\t%v", accName, err))
+		// app.serverError(w, r, fmt.Errorf("failed to get qr for %s:\n\t%v", accName, err))
+		app.logger.Warn("failed to generate QR", "user", accName)
+		// render view.tmpl with empty QR
+		app.render(w, r, http.StatusOK, "view.tmpl", data)
+		return
 	}
-	data.QR = qr
+
+	// save string qr as HTML code
+	data.QR = template.HTML(qr)
 
 	// app.render(w, r, http.StatusOK, "create.tmpl", data)
 	app.render(w, r, http.StatusOK, "view.tmpl", data)

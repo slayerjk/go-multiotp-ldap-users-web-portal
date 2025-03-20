@@ -1,12 +1,12 @@
 {{define "title"}}Ваш QR{{end}}
 
 {{define "main"}}
+    <h2>{{.Username}}, Ваш QR:</h2>
     {{if .QR}}
-    <p>Ваш QR:</p>
     <div class="qr">
         {{.QR}}
     </div>
     {{else}}
-    <span>NO QR FOUND!!!</span>
+    <b>НЕ НAЙДЕН!</b>
     {{end}}
 {{end}}
