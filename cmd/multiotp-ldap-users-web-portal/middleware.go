@@ -67,10 +67,8 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		// the chain are executed.
 		if !app.isAuthenticated(r) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
-			fmt.Println("FALSE")
 			return
 		}
-		fmt.Println("TRUE")
 
 		// Otherwise set the "Cache-Control: no-store" header so that pages
 		// require authentication are not stored in the users browser cache (or

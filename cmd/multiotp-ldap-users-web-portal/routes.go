@@ -19,7 +19,7 @@ func (app *application) routes() http.Handler {
 	mux.Handle("GET /{$}", dynamic.ThenFunc(app.home))
 	mux.Handle("GET /user/login", dynamic.ThenFunc(app.userLogin))
 	mux.Handle("POST /user/login", dynamic.ThenFunc(app.userLoginPost))
-	// mux.Handle("GET /qrview", dynamic.ThenFunc(app.qrView))
+	// mux.Handle("GET /qr/view", dynamic.ThenFunc(app.qrView))
 
 	// protected pages, only for autenticated users
 	protected := dynamic.Append(app.requireAuthentication)

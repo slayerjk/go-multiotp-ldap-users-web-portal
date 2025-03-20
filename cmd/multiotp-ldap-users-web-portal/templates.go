@@ -18,10 +18,10 @@ import (
 type templateData struct {
 	CurrentYear     int
 	Form            any
-	Flash           string // Add a Flash field to the templateData struct.
-	IsAuthenticated bool   // Add an IsAuthenticated field to the templateData struct.
-	CSRFToken       string // Add a CSRFToken field.
-	QR              string
+	Flash           string
+	IsAuthenticated bool
+	CSRFToken       string
+	QR              template.HTML // must be <svg> code chunc to insert in template
 }
 
 // Create a humanDate function which returns a nicely formatted string

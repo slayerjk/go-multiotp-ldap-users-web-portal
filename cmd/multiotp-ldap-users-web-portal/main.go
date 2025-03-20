@@ -22,10 +22,11 @@ import (
 const appName = "OTP-Portal"
 
 type application struct {
-	logger         *slog.Logger
-	templateCache  map[string]*template.Template
-	formDecoder    *form.Decoder
-	sessionManager *scs.SessionManager
+	logger          *slog.Logger
+	templateCache   map[string]*template.Template
+	formDecoder     *form.Decoder
+	sessionManager  *scs.SessionManager
+	multiOTPBinPath *string
 }
 
 func main() {
@@ -51,7 +52,7 @@ func main() {
 	tlsCert := flag.String("tls-cert", tlsCertDefault, "full path to tls Cert file")
 	tlsKey := flag.String("tls-key", tlsKeyDefault, "full path to tls Key file")
 	dbName := flag.String("db", "otpportal", "MySQL db name")
-	// multiOTPBinPath := flag.String("m", "c:/MultiOTP/windows/multiotp.exe", "Full path to MulitOTP binary")
+	multiOTPBinPath := flag.String("m", "c:/MultiOTP/windows/multiotp.exe", "Full path to MulitOTP binary")
 	// ldapBaseDN := flag.String("b", "dc=example,dc=com", "Base DN for LDAP Domain")
 
 	flag.Usage = func() {
@@ -112,10 +113,11 @@ func main() {
 
 	// define app
 	app := &application{
-		logger:         logger,
-		templateCache:  templateCache,
-		formDecoder:    formDecoder,
-		sessionManager: sessionManager,
+		logger:          logger,
+		templateCache:   templateCache,
+		formDecoder:     formDecoder,
+		sessionManager:  sessionManager,
+		multiOTPBinPath: multiOTPBinPath,
 	}
 
 	tlsConfig := &tls.Config{

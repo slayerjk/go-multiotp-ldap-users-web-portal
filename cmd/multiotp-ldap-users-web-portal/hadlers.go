@@ -1,15 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/multiotp"
+	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/qrwork"
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/validator"
 )
 
 // Home handler
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	data := app.newTemplateData(r)
-	app.render(w, r, http.StatusOK, "home.tmpl", data)
+	// data := app.newTemplateData(r)
+	// app.render(w, r, http.StatusOK, "home.tmpl", data)
+
+	http.Redirect(w, r, "/qr/view", http.StatusSeeOther)
 }
 
 // Create a new userLoginForm struct.
@@ -54,21 +59,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// add corresponding QR to template
-	// qrFile, err := os.Open("TEST.svg")
-	// if err != nil {
-	// 	app.logger.Error("failed to open svg")
-	// }
-	// defer qrFile.Close()
-	// os.Exit(1)
-	// qr, err := io.ReadAll(qrFile)
-	// if err != nil {
-	// 	app.logger.Error("failed to read svg")
-	// }
-	// os.Exit(1)
-	// data := app.newTemplateData(r)
-	// data.QR = string(qr)
-
+	// renew session token
 	err = app.sessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
@@ -78,16 +69,54 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	// add auth id to session
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", 1)
 
+	// add account name to the session
+	app.sessionManager.Put(r.Context(), "accName", form.Login)
+
 	// redirect user to qr view page(view.tmpl)
-	http.Redirect(w, r, "/qrview", http.StatusSeeOther)
+	http.Redirect(w, r, "/qr/view", http.StatusSeeOther)
 }
 
 func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
-	// data.Form = snippetCreateForm{
-	// 	Expires: 365,
+	// get accName from session
+	accName := app.sessionManager.GetString(r.Context(), "accName")
+	if len(accName) == 0 {
+		app.serverError(w, r, fmt.Errorf("no accName found"))
+		return
+	}
+	// fmt.Println(accName)
+
+	// get QR svg code for user
+	// qrFile, err := os.Open("TEST.svg")
+	// if err != nil {
+	// 	app.logger.Error("failed to open svg")
+	// 	return
 	// }
+	// defer qrFile.Close()
+
+	// qr, err := io.ReadAll(qrFile)
+	// if err != nil {
+	// 	app.logger.Error("failed to read svg")
+	// 	return
+	// }
+
+	// data.QR = qr
+	// data.QR = "HELLO!"
+
+	// get totpURL
+	totpURL, err := multiotp.GetMultiOTPTokenURL(accName, *app.multiOTPBinPath)
+	if err != nil {
+		app.serverError(w, r, fmt.Errorf("failed to get totpURL:\n\t%v", err))
+		return
+	}
+
+	// get QR svg content(between <svg> tags)
+	qr, err := qrwork.GenerateTOTPSvgQrHTML(totpURL)
+	if err != nil {
+		app.serverError(w, r, fmt.Errorf("failed to get qr for %s:\n\t%v", accName, err))
+	}
+	data.QR = qr
 
 	// app.render(w, r, http.StatusOK, "create.tmpl", data)
 	app.render(w, r, http.StatusOK, "view.tmpl", data)
@@ -105,6 +134,9 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// Remove the authenticatedUserID from the session data so that the user is
 	// 'logged out'.
 	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
+
+	// remove accName from the session
+	app.sessionManager.Remove(r.Context(), "accName")
 
 	// Add a flash message to the session to confirm to the user that they've been
 	// logged out.
