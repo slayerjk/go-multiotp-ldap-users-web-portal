@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
+	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/ldapwork"
 )
 
 // The serverError helper writes a log entry at Error level (including the request
@@ -120,4 +121,54 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 	}
 
 	return isAuthenticated
+}
+
+// LDAP auth, returns user's AD displayname if ok
+func (app *application) ldapAuth(login string, password string) (string, error) {
+	// set correct bindUser Name
+	bindUser := login + "@" + app.userDomainFQDN
+
+	// make LDAP connection
+	conn, err := ldapwork.MakeLdapConnection(app.userDomainFQDN)
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+
+	// start TLS connection
+	err = ldapwork.StartTLSConnWoVerification(conn)
+	if err != nil {
+		return "", err
+	}
+
+	// make LDAP bind
+	err = ldapwork.LdapBind(conn, bindUser, password)
+	if err != nil {
+		return "", err
+	}
+
+	// setting LDAP filter
+	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=%s))", login)
+
+	// making LDAP search request
+	reqResult, err := ldapwork.MakeSearchReq(conn, app.userDomainBaseDN, filter, "displayName")
+	if err != nil {
+		return "", err
+	}
+
+	// returning displayName
+	result := reqResult[0].GetAttributeValue("displayName")
+	if len(result) == 0 {
+		return "", fmt.Errorf("empty displayName for %s", login)
+	}
+
+	conn.Close()
+	return result, nil
+}
+
+// Get user's samaAccountName in QR domain based on pattern match of user login
+func MatchUserSamaAccName(login string, password string, regexp string) (string, error) {
+	// pattern := regexp.MustCompile("dfd")
+
+	return "", nil
 }

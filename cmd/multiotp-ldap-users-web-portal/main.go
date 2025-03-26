@@ -27,6 +27,13 @@ type application struct {
 	formDecoder     *form.Decoder
 	sessionManager  *scs.SessionManager
 	multiOTPBinPath *string
+	// domain data
+	userDomainFQDN       string
+	userDomainBaseDN     string
+	qrDomainFQDN         string
+	qrDomainBaseDN       string
+	qrDomainBindUser     string
+	qrDomainBindUserPass string
 }
 
 func main() {
@@ -37,7 +44,39 @@ func main() {
 		tlsKeyDefault   string = workDir + "/tls" + "/" + "key.pem"
 	)
 
-	// checking os env exists for OTP_DB_USR & OTP_DB_PASS
+	// checking Domain data OS env
+	userDomainFQDN, ok := os.LookupEnv("USER_DOM_FQDN")
+	if !ok {
+		fmt.Println("failed to find USER_DOM_FQDN env var")
+		os.Exit(1)
+	}
+	userDomainBaseDN, ok := os.LookupEnv("USER_DOM_BASE")
+	if !ok {
+		fmt.Println("failed to find USER_DOM_BASE env var")
+		os.Exit(1)
+	}
+	qrDomainFQDN, ok := os.LookupEnv("QR_DOM_FQDN")
+	if !ok {
+		fmt.Println("failed to find QR_DOM_FQDN env var")
+		os.Exit(1)
+	}
+	qrDomainBaseDN, ok := os.LookupEnv("QR_DOM_BASE")
+	if !ok {
+		fmt.Println("failed to find QR_DOM_BASE env var")
+		os.Exit(1)
+	}
+	qrDomainBindUser, ok := os.LookupEnv("QR_DOM_BIND_USER")
+	if !ok {
+		fmt.Println("failed to find QR_DOM_BIND_USER env var")
+		os.Exit(1)
+	}
+	qrDomainBindUserPass, ok := os.LookupEnv("QR_DOM_BIND_USER_PASS")
+	if !ok {
+		fmt.Println("failed to find QR_DOM_BIND_USER_PASS env var")
+		os.Exit(1)
+	}
+
+	// checking OS env exists for OTP_DB_USR & OTP_DB_PASS
 	dbUsr := os.Getenv("OTP_DB_USR")
 	dbPass := os.Getenv("OTP_DB_PASS")
 	if len(dbUsr) == 0 || len(dbPass) == 0 {
@@ -113,11 +152,17 @@ func main() {
 
 	// define app
 	app := &application{
-		logger:          logger,
-		templateCache:   templateCache,
-		formDecoder:     formDecoder,
-		sessionManager:  sessionManager,
-		multiOTPBinPath: multiOTPBinPath,
+		logger:               logger,
+		templateCache:        templateCache,
+		formDecoder:          formDecoder,
+		sessionManager:       sessionManager,
+		multiOTPBinPath:      multiOTPBinPath,
+		userDomainFQDN:       userDomainFQDN,
+		userDomainBaseDN:     userDomainBaseDN,
+		qrDomainFQDN:         qrDomainFQDN,
+		qrDomainBaseDN:       qrDomainBaseDN,
+		qrDomainBindUser:     qrDomainBindUser,
+		qrDomainBindUserPass: qrDomainBindUserPass,
 	}
 
 	tlsConfig := &tls.Config{

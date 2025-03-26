@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 
@@ -51,13 +50,21 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 
 	// password validation
 	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+
 	// TODO: Ldap password validation
+	// check LDAP password via validator(?)
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl", data)
 		return
+	}
+
+	// trying to authenicate user via LDAP
+	userDisplayName, err := app.ldapAuth(form.Login, form.Password)
+	if err != nil {
+		app.serverError(w, r, err)
 	}
 
 	// renew session token
@@ -70,8 +77,9 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	// add auth id to session
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", 1)
 
-	// add account name to the session
+	// add account name & AD displayName attr to the session
 	app.sessionManager.Put(r.Context(), "accName", form.Login)
+	app.sessionManager.Put(r.Context(), "displayName", userDisplayName)
 
 	// redirect user to qr view page(view.tmpl)
 	http.Redirect(w, r, "/qr/view", http.StatusSeeOther)
@@ -81,12 +89,15 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	// get accName from session
+	displayName := app.sessionManager.GetString(r.Context(), "displayName")
 	accName := app.sessionManager.GetString(r.Context(), "accName")
-	if len(accName) == 0 {
-		app.serverError(w, r, fmt.Errorf("no accName found"))
-		return
+	// use accName if displayName is empty
+	data.Username = displayName
+	if len(displayName) == 0 {
+		data.Username = accName
 	}
-	data.Username = accName
+
+	// get samaAcountName for QR domain of corresponding user
 
 	// get totpURL
 	totpURL, err := multiotp.GetMultiOTPTokenURL(accName, *app.multiOTPBinPath)
@@ -128,8 +139,9 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// 'logged out'.
 	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
 
-	// remove accName from the session
+	// remove accName & displayName from the session
 	app.sessionManager.Remove(r.Context(), "accName")
+	app.sessionManager.Remove(r.Context(), "displayName")
 
 	// Add a flash message to the session to confirm to the user that they've been
 	// logged out.
