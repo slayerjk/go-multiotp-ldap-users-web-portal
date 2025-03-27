@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-ldap/ldap/v3"
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/ldapwork"
@@ -124,34 +125,12 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 }
 
 // LDAP auth, returns user's AD displayname if ok
-func (app *application) ldapAuth(login string, password string) (string, error) {
-	// set correct bindUser Name
-	bindUser := login + "@" + app.userDomainFQDN
-
-	// make LDAP connection
-	conn, err := ldapwork.MakeLdapConnection(app.userDomainFQDN)
-	if err != nil {
-		return "", err
-	}
-	defer conn.Close()
-
-	// start TLS connection
-	err = ldapwork.StartTLSConnWoVerification(conn)
-	if err != nil {
-		return "", err
-	}
-
-	// make LDAP bind
-	err = ldapwork.LdapBind(conn, bindUser, password)
-	if err != nil {
-		return "", err
-	}
-
+func (app *application) ldapGetDisplayname(conn *ldap.Conn, login string, baseDN string) (string, error) {
 	// setting LDAP filter
 	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=%s))", login)
 
 	// making LDAP search request
-	reqResult, err := ldapwork.MakeSearchReq(conn, app.userDomainBaseDN, filter, "displayName")
+	reqResult, err := ldapwork.MakeSearchReq(conn, baseDN, filter, "displayName")
 	if err != nil {
 		return "", err
 	}
@@ -162,13 +141,25 @@ func (app *application) ldapAuth(login string, password string) (string, error) 
 		return "", fmt.Errorf("empty displayName for %s", login)
 	}
 
-	conn.Close()
 	return result, nil
 }
 
-// Get user's samaAccountName in QR domain based on pattern match of user login
-func MatchUserSamaAccName(login string, password string, regexp string) (string, error) {
-	// pattern := regexp.MustCompile("dfd")
+// Get user's samaAccountName in QR domain based on user's Domain login
+func (app *application) ldapMatchSamaAccName(conn *ldap.Conn, login string, baseDN string) (string, error) {
+	// setting LDAP filter
+	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=*%s))", login)
 
-	return "", nil
+	// making LDAP search request
+	reqResult, err := ldapwork.MakeSearchReq(conn, baseDN, filter, "sAMAccountName")
+	if err != nil {
+		return "", err
+	}
+
+	// returning displayName
+	result := reqResult[0].GetAttributeValue("sAMAccountName")
+	if len(result) == 0 {
+		return "", fmt.Errorf("empty sAMAccountName for %s", login)
+	}
+
+	return result, nil
 }

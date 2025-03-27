@@ -2,8 +2,10 @@ package main
 
 import (
 	"html/template"
+	"log/slog"
 	"net/http"
 
+	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/ldapwork"
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/multiotp"
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/qrwork"
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/validator"
@@ -51,9 +53,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	// password validation
 	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
 
-	// TODO: Ldap password validation
-	// check LDAP password via validator(?)
-
+	// check errors of form
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -61,11 +61,48 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// trying to authenicate user via LDAP
-	userDisplayName, err := app.ldapAuth(form.Login, form.Password)
+	// making LDAP connection
+	ldapConn, err := ldapwork.MakeLdapConnection(app.userDomainFQDN)
 	if err != nil {
-		app.serverError(w, r, err)
+		app.logger.Error("failed to make LDAP connection", slog.Any("error", err))
+		data := app.newTemplateData(r)
+		app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl", data)
+		return
 	}
+
+	// making TLS over LDAP connection
+	err = ldapwork.StartTLSConnWoVerification(ldapConn)
+	if err != nil {
+		app.logger.Error("failed to make LDAP TLS connection", slog.Any("error", err))
+		data := app.newTemplateData(r)
+		app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl", data)
+		return
+	}
+
+	// trying to Bind(authenticate via LDAP)
+	bindUser := form.Login + "@" + app.userDomainFQDN
+	err = ldapwork.LdapBind(ldapConn, bindUser, form.Password)
+	// ldapConn, err := app.ldapConnectBind(form.Login, form.Password, app.userDomainFQDN)
+	if err != nil {
+		form.CheckField(false, "login", "Wrong LDAP login or password")
+		app.logger.Warn("failed to do LDAP bind", "user", form.Login, slog.Any("error", err))
+	}
+	defer ldapConn.Close()
+
+	// check errors of form
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl", data)
+		return
+	}
+
+	// save displayName for context
+	userDisplayName, err := app.ldapGetDisplayname(ldapConn, form.Login, app.userDomainBaseDN)
+	if err != nil {
+		app.logger.Warn("failed to do get displayName attr", "user", form.Login, slog.Any("error", err))
+	}
+	ldapConn.Close()
 
 	// renew session token
 	err = app.sessionManager.RenewToken(r.Context())
@@ -85,6 +122,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/qr/view", http.StatusSeeOther)
 }
 
+// QR view page for authenticated users
 func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
@@ -97,13 +135,48 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 		data.Username = accName
 	}
 
-	// get samaAcountName for QR domain of corresponding user
+	// making LDAP connection
+	ldapConn, err := ldapwork.MakeLdapConnection(app.qrDomainFQDN)
+	if err != nil {
+		app.logger.Error("failed to make QR LDAP connection", slog.Any("error", err))
+		app.render(w, r, http.StatusOK, "view.tmpl", data)
+		return
+	}
+	defer ldapConn.Close()
+
+	// making TLS over LDAP connection
+	err = ldapwork.StartTLSConnWoVerification(ldapConn)
+	if err != nil {
+		ldapConn.Close()
+		app.logger.Error("failed to make QR LDAP TLS connection", slog.Any("error", err))
+		app.render(w, r, http.StatusOK, "view.tmpl", data)
+		return
+	}
+
+	// trying to Bind(authenticate via QR LDAP)
+	bindUser := app.qrDomainBindUser + "@" + app.qrDomainFQDN
+	err = ldapwork.LdapBind(ldapConn, bindUser, app.qrDomainBindUserPass)
+	if err != nil {
+		ldapConn.Close()
+		app.logger.Warn("failed to do QR LDAP bind", "user", bindUser, slog.Any("error", err))
+		app.render(w, r, http.StatusOK, "view.tmpl", data)
+		return
+	}
+
+	// save displayName for context
+	userSama, err := app.ldapMatchSamaAccName(ldapConn, accName, app.qrDomainBaseDN)
+	ldapConn.Close()
+	if err != nil {
+		app.logger.Warn("failed to do get samaAccountName attr", "user", accName, slog.Any("error", err))
+		app.render(w, r, http.StatusOK, "view.tmpl", data)
+		return
+	}
 
 	// get totpURL
-	totpURL, err := multiotp.GetMultiOTPTokenURL(accName, *app.multiOTPBinPath)
+	totpURL, err := multiotp.GetMultiOTPTokenURL(userSama, *app.multiOTPBinPath)
 	if err != nil {
 		// app.serverError(w, r, fmt.Errorf("failed to get totpURL:\n\t%v", err))
-		app.logger.Warn("failed to find totpURL", "user", accName)
+		app.logger.Warn("failed to find totpURL", "user", userSama, slog.Any("error", err))
 		// render view.tmpl with empty QR
 		app.render(w, r, http.StatusOK, "view.tmpl", data)
 		return
@@ -113,7 +186,7 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 	qr, err := qrwork.GenerateTOTPSvgQrHTML(totpURL)
 	if err != nil {
 		// app.serverError(w, r, fmt.Errorf("failed to get qr for %s:\n\t%v", accName, err))
-		app.logger.Warn("failed to generate QR", "user", accName)
+		app.logger.Warn("failed to generate QR", "user", userSama, slog.Any("error", err))
 		// render view.tmpl with empty QR
 		app.render(w, r, http.StatusOK, "view.tmpl", data)
 		return
