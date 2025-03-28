@@ -1,4 +1,4 @@
-{{define "title"}}Вхот{{end}}
+{{define "title"}}Вход{{end}}
 
 {{define "main"}}
 <form action='/user/login' method='POST' novalidate>
@@ -8,7 +8,7 @@
         <div class='error'>{{.}}</div>
     {{end}}
     <div>
-        <label>Ваш доменный аккаунт(для рабочей станции)</label>
+        <label>Ваш доменный аккаунт(вашей доменной рабочей станции)</label>
         
         {{with .Form.FieldErrors.login}}
             <label class='error'>{{.}}</label>
@@ -24,7 +24,7 @@
         <input type='password' name='password'>
     </div>
     <div>
-        <input type='submit' value='Login'>
+        <input type='submit' value='Войти'>
     </div>
 </form>
 {{end}}

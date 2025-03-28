@@ -1,0 +1,18 @@
+{{define "title"}}Your QR{{end}}
+
+{{define "main"}}
+    <h2>{{.Username}}, your QR is:</h2>
+    {{if .QR}}
+    <div class="qr">
+        {{.QR}}
+    </div>
+    {{else}}
+    <b>NOT FOUND!</b>
+    {{end}}
+    <div>
+        <p>To reissue your QR code click on link <b>"Reissue QR"</b> in the header of this page.</p>
+        <p>You want to reissue in the case of QR code's compromisation, for example in the case you lose your smartphone.</p>
+        <p><b>Reissue takes some time(10s or more), please wait until it will fininsh!</b></p>
+        <p>Upon finishing you will see a banner <b>"Your QR has been reissued!"</b> or <b>"Your QR has NOT been reissued!"</b>
+    </div>
+{{end}}
