@@ -1,5 +1,7 @@
 # MultiOTP Web Portal for LDAP users
 
+Just to show LDAP users' their QR code and reissue it if needed.
+
 **With big thanks to Alex Edwards and his wonderful book: Let's Go(https://lets-go.alexedwards.net/)!**
 
 I've learned(and taken ;)) most of web server's code and styles for UI.
