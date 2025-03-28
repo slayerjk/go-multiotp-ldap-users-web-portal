@@ -172,6 +172,9 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Put context of SamaAccount name(to use for reissueQR)
+	app.sessionManager.Put(r.Context(), "QrAcc", userSama)
+
 	// get totpURL
 	totpURL, err := multiotp.GetMultiOTPTokenURL(userSama, *app.multiOTPBinPath)
 	if err != nil {
@@ -199,6 +202,21 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
 
+// Reissue QR and redirect ot qrView for authenticated users
+func (app *application) qrReissue(w http.ResponseWriter, r *http.Request) {
+	// get accName from session
+	qrAcc := app.sessionManager.GetString(r.Context(), "QrAcc")
+	// TODO:redirect if empty
+
+	// make reissue of user(del->resync)
+	err := multiotp.ReissueMultiOTPQR(*app.multiOTPBinPath, qrAcc)
+	if err != nil {
+		app.logger.Error("failed to reissue QR", "acc", qrAcc, slog.Any("error", err))
+	}
+
+	http.Redirect(w, r, "/qr/view", http.StatusSeeOther)
+}
+
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// Use the RenewToken() method on the current session to change the session
 	// ID again.
@@ -215,10 +233,12 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// remove accName & displayName from the session
 	app.sessionManager.Remove(r.Context(), "accName")
 	app.sessionManager.Remove(r.Context(), "displayName")
+	app.sessionManager.Remove(r.Context(), "QrAcc")
 
 	// Add a flash message to the session to confirm to the user that they've been
 	// logged out.
-	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
+	// app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
+	app.sessionManager.Put(r.Context(), "flash", "Вы успешно вышли!")
 
 	// Redirect the user to the application home page.
 	http.Redirect(w, r, "/", http.StatusSeeOther)

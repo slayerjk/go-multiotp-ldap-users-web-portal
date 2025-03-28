@@ -1,9 +1,9 @@
 {{define "nav"}}
 <nav>
     <div>
-        <a href='/'>Home</a>
+        <a href='/'>Посмотреть свой QR</a>
          {{if .IsAuthenticated}}
-            <!-- <a href='/qr/reissue'>Перевыпустить QR</a> -->
+            <a href='/qr/reissue'>Перевыпустить QR(ДОЖДИТЕСЬ ОКОНЧАНИЯ!)</a>
         {{end}}
     </div>
     <div>
@@ -11,10 +11,10 @@
             <form action='/user/logout' method='POST'>
                 <!-- Include the CSRF token -->
                 <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
-                <button>Logout</button>
+                <button>Выйти</button>
             </form>
         {{else}}
-            <a href='/user/login'>Login</a>
+            <a href='/user/login'>Войти</a>
         {{end}}
     </div>
 </nav>

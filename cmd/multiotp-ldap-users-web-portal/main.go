@@ -144,7 +144,7 @@ func main() {
 	// Init session manager
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
-	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Lifetime = 30 * time.Minute
 	sessionManager.Cookie.Secure = true
 
 	// Initialize a decoder instance...

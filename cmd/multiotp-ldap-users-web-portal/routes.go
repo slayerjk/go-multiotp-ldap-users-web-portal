@@ -26,7 +26,7 @@ func (app *application) routes() http.Handler {
 
 	mux.Handle("POST /user/logout", protected.ThenFunc(app.userLogoutPost))
 	mux.Handle("GET /qr/view", protected.ThenFunc(app.qrView))
-	mux.Handle("POST /qr/reissue", protected.ThenFunc(app.qrView))
+	mux.Handle("GET /qr/reissue", protected.ThenFunc(app.qrReissue))
 
 	// for all pages
 	standard := alice.New(app.recoverPanic, app.logRequest, commonHeaders)

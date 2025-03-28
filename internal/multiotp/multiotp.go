@@ -49,7 +49,7 @@ func GetMultiOTPTokenURL(user string, multiOTPBinPath string) ([]byte, error) {
 
 // Delete MultiOTP User
 // If user doesn't exist - returns noting(not error)
-func DelMultiOTPUser(user string, multiOTPBinPath string) error {
+func delMultiOTPUser(multiOTPBinPath string, user string) error {
 	// define command to delete user
 	cmd := exec.Command(multiOTPBinPath, "-delete", user)
 	// due to multiotp console tools throw Exit codes every time
@@ -72,7 +72,7 @@ func DelMultiOTPUser(user string, multiOTPBinPath string) error {
 }
 
 // Resync MultiOTP Users
-func ResyncMultiOTPUsers(multiOTPBinPath string) error {
+func resyncMultiOTPUsers(multiOTPBinPath string) error {
 	// define command to delete user
 	cmd := exec.Command(multiOTPBinPath, "-ldap-users-sync")
 	// due to multiotp console tools throw Exit codes every time
@@ -84,6 +84,24 @@ func ResyncMultiOTPUsers(multiOTPBinPath string) error {
 		if err.ExitCode() != 19 {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// Reissue MultiOTP QR
+func ReissueMultiOTPQR(multiOTPBinPath string, user string) error {
+	// first del user from MultiOTP db
+	err := delMultiOTPUser(multiOTPBinPath, user)
+	if err != nil {
+		return fmt.Errorf("reissue qr: failed to del user:\n\t%v", err)
+	}
+
+	// second resync MultiOTP db to get same user back with new QR generated
+	// may take some time to resync(depend of users number)
+	err = resyncMultiOTPUsers(multiOTPBinPath)
+	if err != nil {
+		return fmt.Errorf("reissue qr: failed to resync users:\n\t%v", err)
 	}
 
 	return nil
