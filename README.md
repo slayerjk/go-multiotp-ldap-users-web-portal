@@ -16,6 +16,9 @@ I've learned(and taken ;)) most of web server's code and styles for UI.
 * All domains'(both auth & MultiOTP) FQDN must be resolved by local DNS(or use hosts file)
 * All domains' must support LDAPS protocol
 
+* Go version: 1.24
+* Tested on MultiOTP version: 5.9.8.0. Must work on later releases(but not tested yet).
+
 <h2>Enviroment Variables</h2>
 
 The app uses env variablse(they MUST exist to operate):
@@ -98,14 +101,14 @@ If ok - the app tries to do search user's samaAccName with such filter:
 
 Where %s is user's USER_DOM account.
 
-If samaAccName found use it to search otpauth:// URL:
+If samaAccName found use it to search otpauth:// URL using MultiOTP cli:
 ```
 > multiotp -urllink user
 ```
 
 If found - generate QR's svg and paste it into template.
 
-3) To reissue:
+3) To reissue using MultiOTP cli:
 ```
 multiotp -delete user
 multiotp -ldap-users-sync
