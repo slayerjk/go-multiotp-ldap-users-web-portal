@@ -206,12 +206,24 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 func (app *application) qrReissue(w http.ResponseWriter, r *http.Request) {
 	// get accName from session
 	qrAcc := app.sessionManager.GetString(r.Context(), "QrAcc")
-	// TODO:redirect if empty
+	if len(qrAcc) == 0 {
+		app.logger.Error("failed to reissue QR, Empty QrAcc")
+		app.sessionManager.Put(r.Context(), "flash", "Ваш QR НЕ перевыпущен!")
+		if *app.lang == "en" {
+			app.sessionManager.Put(r.Context(), "flash", "Your QR hasn't been reissued!")
+		}
+		http.Redirect(w, r, "/qr/view", http.StatusSeeOther)
+	}
 
 	// make reissue of user(del->resync)
 	err := multiotp.ReissueMultiOTPQR(*app.multiOTPBinPath, qrAcc)
 	if err != nil {
 		app.logger.Error("failed to reissue QR", "acc", qrAcc, slog.Any("error", err))
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Ваш QR перевыпущен!")
+	if *app.lang == "en" {
+		app.sessionManager.Put(r.Context(), "flash", "Your QR has been reissued!")
 	}
 
 	http.Redirect(w, r, "/qr/view", http.StatusSeeOther)
@@ -237,8 +249,10 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 
 	// Add a flash message to the session to confirm to the user that they've been
 	// logged out.
-	// app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
 	app.sessionManager.Put(r.Context(), "flash", "Вы успешно вышли!")
+	if *app.lang == "en" {
+		app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
+	}
 
 	// Redirect the user to the application home page.
 	http.Redirect(w, r, "/", http.StatusSeeOther)

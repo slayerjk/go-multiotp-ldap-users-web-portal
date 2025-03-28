@@ -34,6 +34,7 @@ type application struct {
 	qrDomainBaseDN       string
 	qrDomainBindUser     string
 	qrDomainBindUserPass string
+	lang                 *string
 }
 
 func main() {
@@ -92,7 +93,7 @@ func main() {
 	tlsKey := flag.String("tls-key", tlsKeyDefault, "full path to tls Key file")
 	dbName := flag.String("db", "otpportal", "MySQL db name")
 	multiOTPBinPath := flag.String("m", "c:/MultiOTP/windows/multiotp.exe", "Full path to MulitOTP binary")
-	// ldapBaseDN := flag.String("b", "dc=example,dc=com", "Base DN for LDAP Domain")
+	lang := flag.String("lang", "ru", "Set pages languages('ru'/'en' only)")
 
 	flag.Usage = func() {
 		fmt.Println("MultiOTP Web Portal for LDAP Users")
@@ -135,7 +136,7 @@ func main() {
 	defer db.Close()
 
 	// Initialize a new template cache...
-	templateCache, err := newTemplateCache()
+	templateCache, err := newTemplateCache(*lang)
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
@@ -163,6 +164,7 @@ func main() {
 		qrDomainBaseDN:       qrDomainBaseDN,
 		qrDomainBindUser:     qrDomainBindUser,
 		qrDomainBindUserPass: qrDomainBindUserPass,
+		lang:                 lang,
 	}
 
 	tlsConfig := &tls.Config{
@@ -174,8 +176,8 @@ func main() {
 		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
 		TLSConfig:    tlsConfig,
 		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 15 * time.Second,
 		Handler:      app.routes(),
 	}
 

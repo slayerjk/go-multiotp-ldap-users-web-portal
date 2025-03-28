@@ -9,12 +9,7 @@ import (
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/ui"
 )
 
-// Define a templateData type to act as the holding structure for
-// any dynamic data that we want to pass to our HTML templates.
-// At the moment it only contains one field, but we'll add more
-// to it as the build progresses.
-// Include a Snippets field in the templateData struct.
-// Add a Form field with the type "any".
+// Define a templateData type to act as the holding structure for dynamic data
 type templateData struct {
 	CurrentYear     int
 	Form            any
@@ -25,27 +20,26 @@ type templateData struct {
 	Username        string
 }
 
-// Create a humanDate function which returns a nicely formatted string
-// representation of a time.Time object.
+// Create a humanDate function which returns a human date
 func humanDate(t time.Time) string {
 	return t.Format("02 Jan 2006 at 15:04")
 }
 
-// Initialize a template.FuncMap object and store it in a global variable. This is
-// essentially a string-keyed map which acts as a lookup between the names of our
-// custom template functions and the functions themselves.
+// Init template function to pass a date
 var functions = template.FuncMap{
 	"humanDate": humanDate,
 }
 
-func newTemplateCache() (map[string]*template.Template, error) {
+func newTemplateCache(lang string) (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
-	// Use fs.Glob() to get a slice of all filepaths in the ui.Files embedded
-	// filesystem which match the pattern 'html/pages/*.tmpl'. This essentially
-	// gives us a slice of all the 'page' templates for the application, just
-	// like before.
-	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl")
+	// setting different pathes for languages
+	langPrefix := "html/ru"
+	if lang == "en" {
+		langPrefix = "html/en"
+	}
+
+	pages, err := fs.Glob(ui.Files, langPrefix+"/pages/*.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +50,8 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// Create a slice containing the filepath patterns for the templates we
 		// want to parse.
 		patterns := []string{
-			"html/base.tmpl",
-			"html/partials/*.tmpl",
+			langPrefix + "/base.tmpl",
+			langPrefix + "/partials/*.tmpl",
 			page,
 		}
 

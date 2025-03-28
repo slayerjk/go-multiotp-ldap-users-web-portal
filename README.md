@@ -1,6 +1,10 @@
 # go-multiotp-ldap-users-portal
 MultiOTP Web Portal for LDAP users
 
+<h2>Localisation</h2>
+
+Only Russian & English. Russian is default.
+Control with flag "lang" ("ru" or "en").
 
 <h2>DB</h2>
 
