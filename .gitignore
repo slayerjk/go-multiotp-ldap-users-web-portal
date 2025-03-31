@@ -17,7 +17,6 @@
 !internal/qrwork/qrwork.go
 !internal/multiotp/multiotp.go
 !internal/validator/validator.go
-!internal/ldapwork/ldapwork.go
 
 !ui/efs.go
 !ui/html/**.tmpl

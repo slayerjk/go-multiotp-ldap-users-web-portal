@@ -1,14 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
 
-	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/ldapwork"
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/multiotp"
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/qrwork"
 	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/validator"
+	ldapwork "github.com/slayerjk/go-valdapwork"
 )
 
 // Home handler
@@ -97,8 +98,9 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// save displayName for context
-	userDisplayName, err := app.ldapGetDisplayname(ldapConn, form.Login, app.userDomainBaseDN)
+	// save displayName for
+	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=%s))", form.Login)
+	userDisplayName, err := ldapwork.GetAttr(ldapConn, filter, form.Login, app.userDomainBaseDN, "displayName")
 	if err != nil {
 		app.logger.Warn("failed to do get displayName attr", "user", form.Login, slog.Any("error", err))
 	}
@@ -164,7 +166,8 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// save displayName for context
-	userSama, err := app.ldapMatchSamaAccName(ldapConn, accName, app.qrDomainBaseDN)
+	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=*%s))", accName)
+	userSama, err := ldapwork.GetAttr(ldapConn, filter, accName, app.qrDomainBaseDN, "sAMAccountName")
 	ldapConn.Close()
 	if err != nil {
 		app.logger.Warn("failed to do get samaAccountName attr", "user", accName, slog.Any("error", err))

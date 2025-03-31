@@ -2,9 +2,11 @@
 
 Just to show LDAP users' their QR code and reissue it if needed.
 
+<h2>Thanks</h2>
+
 **With big thanks to Alex Edwards and his wonderful book: Let's Go(https://lets-go.alexedwards.net/)!**
 
-I've learned(and taken ;)) most of web server's code and styles for UI.
+Web Server logic and all UI static files are taken from there.
 
 <h2>Requirements</h2>
 
@@ -108,11 +110,12 @@ If samaAccName found use it to search otpauth:// URL using MultiOTP cli:
 > multiotp -urllink user
 ```
 
-If found - generate QR's svg and paste it into template.
+* If found - generate QR's svg and paste it into template.
+* If not - print "NOT FOUND !" in QR placeholder of page.
 
 3) To reissue using MultiOTP cli:
 ```
 multiotp -delete user
 multiotp -ldap-users-sync
 ```
-and the again get current QR.
+and then again get current QR logic.

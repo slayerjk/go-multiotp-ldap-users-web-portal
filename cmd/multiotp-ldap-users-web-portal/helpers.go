@@ -7,10 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-ldap/ldap/v3"
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
-	"github.com/slayerjk/go-multiotp-ldap-users-web-portal/internal/ldapwork"
 )
 
 // The serverError helper writes a log entry at Error level (including the request
@@ -124,42 +122,20 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 	return isAuthenticated
 }
 
-// LDAP auth, returns user's AD displayname if ok
-func (app *application) ldapGetDisplayname(conn *ldap.Conn, login string, baseDN string) (string, error) {
-	// setting LDAP filter
-	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=%s))", login)
+// // Get LDAP attribute
+// // Return first result of *ldap.Entry
+// func (app *application) ldapGetAttr(conn *ldap.Conn, filter, login, baseDN, attr string) (string, error) {
+// 	// making LDAP search request
+// 	reqResult, err := ldapwork.MakeSearchReq(conn, baseDN, filter, attr)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	// making LDAP search request
-	reqResult, err := ldapwork.MakeSearchReq(conn, baseDN, filter, "displayName")
-	if err != nil {
-		return "", err
-	}
+// 	// returning displayName
+// 	result := reqResult[0].GetAttributeValue(attr)
+// 	if len(result) == 0 {
+// 		return "", fmt.Errorf("empty attribute(%s) for %s", attr, login)
+// 	}
 
-	// returning displayName
-	result := reqResult[0].GetAttributeValue("displayName")
-	if len(result) == 0 {
-		return "", fmt.Errorf("empty displayName for %s", login)
-	}
-
-	return result, nil
-}
-
-// Get user's samaAccountName in QR domain based on user's Domain login
-func (app *application) ldapMatchSamaAccName(conn *ldap.Conn, login string, baseDN string) (string, error) {
-	// setting LDAP filter
-	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=*%s))", login)
-
-	// making LDAP search request
-	reqResult, err := ldapwork.MakeSearchReq(conn, baseDN, filter, "sAMAccountName")
-	if err != nil {
-		return "", err
-	}
-
-	// returning displayName
-	result := reqResult[0].GetAttributeValue("sAMAccountName")
-	if len(result) == 0 {
-		return "", fmt.Errorf("empty sAMAccountName for %s", login)
-	}
-
-	return result, nil
-}
+// 	return result, nil
+// }
