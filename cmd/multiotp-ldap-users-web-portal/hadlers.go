@@ -62,17 +62,8 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// making LDAP connection
-	ldapConn, err := ldapwork.MakeLdapConnection(app.userDomainFQDN)
-	if err != nil {
-		app.logger.Error("failed to make LDAP connection", slog.Any("error", err))
-		data := app.newTemplateData(r)
-		app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl", data)
-		return
-	}
-
-	// making TLS over LDAP connection
-	err = ldapwork.StartTLSConnWoVerification(ldapConn)
+	// making LDAP connection with TLS
+	ldapConn, err := ldapwork.StartTLSConnWoVerification(app.userDomainFQDN)
 	if err != nil {
 		app.logger.Error("failed to make LDAP TLS connection", slog.Any("error", err))
 		data := app.newTemplateData(r)
@@ -137,17 +128,8 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 		data.Username = accName
 	}
 
-	// making LDAP connection
-	ldapConn, err := ldapwork.MakeLdapConnection(app.qrDomainFQDN)
-	if err != nil {
-		app.logger.Error("failed to make QR LDAP connection", slog.Any("error", err))
-		app.render(w, r, http.StatusOK, "view.tmpl", data)
-		return
-	}
-	defer ldapConn.Close()
-
 	// making TLS over LDAP connection
-	err = ldapwork.StartTLSConnWoVerification(ldapConn)
+	ldapConn, err := ldapwork.StartTLSConnWoVerification(app.qrDomainFQDN)
 	if err != nil {
 		ldapConn.Close()
 		app.logger.Error("failed to make QR LDAP TLS connection", slog.Any("error", err))
@@ -165,7 +147,7 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// save displayName for context
+	// save sAMAccountName for context
 	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=*%s))", accName)
 	userSama, err := ldapwork.GetAttr(ldapConn, filter, accName, app.qrDomainBaseDN, "sAMAccountName")
 	ldapConn.Close()
