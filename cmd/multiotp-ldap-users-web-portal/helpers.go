@@ -121,21 +121,3 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 
 	return isAuthenticated
 }
-
-// // Get LDAP attribute
-// // Return first result of *ldap.Entry
-// func (app *application) ldapGetAttr(conn *ldap.Conn, filter, login, baseDN, attr string) (string, error) {
-// 	// making LDAP search request
-// 	reqResult, err := ldapwork.MakeSearchReq(conn, baseDN, filter, attr)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	// returning displayName
-// 	result := reqResult[0].GetAttributeValue(attr)
-// 	if len(result) == 0 {
-// 		return "", fmt.Errorf("empty attribute(%s) for %s", attr, login)
-// 	}
-
-// 	return result, nil
-// }
