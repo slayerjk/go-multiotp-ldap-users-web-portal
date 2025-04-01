@@ -2,6 +2,9 @@
 
 Just to show LDAP users' their QR code and reissue it if needed.
 
+* It was build to use in Windows with Windows version of MultiOTP.
+* It may be used in Linux(not tested).
+
 <h2>Thanks</h2>
 
 **With big thanks to Alex Edwards and his wonderful book: Let's Go(https://lets-go.alexedwards.net/)!**
