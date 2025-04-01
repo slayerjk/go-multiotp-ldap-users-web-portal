@@ -6,7 +6,7 @@ Just to show LDAP users' their QR code and reissue it if needed.
 
 **With big thanks to Alex Edwards and his wonderful book: Let's Go(https://lets-go.alexedwards.net/)!**
 
-Web Server logic and all UI static files are taken from there.
+Web Server logic and all UI static files are taken from this book.
 
 <h2>Requirements</h2>
 

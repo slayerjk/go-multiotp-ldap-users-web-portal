@@ -97,7 +97,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Println("MultiOTP Web Portal for LDAP Users")
-		fmt.Println("Version = x.x.x")
+		fmt.Println("Version = 0.0.1")
 		// fmt.Println("Usage: <app> [-opt] ...")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
