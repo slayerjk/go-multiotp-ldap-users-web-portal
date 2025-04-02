@@ -87,7 +87,7 @@ func main() {
 
 	// setting flags
 	logsDir := flag.String("log-dir", logsPathDefault, "set custom log dir")
-	logsToKeep := flag.Int("keep-logs", 7, "set number of logs to keep after rotation")
+	logsToKeep := flag.Int("keep-logs", 30, "set number of logs to keep after rotation")
 	addr := flag.String("addr", ":3000", "HTTP server address, ex. ':3000' for localhost:3000")
 	tlsCert := flag.String("tls-cert", tlsCertDefault, "full path to tls Cert file")
 	tlsKey := flag.String("tls-key", tlsKeyDefault, "full path to tls Key file")
@@ -97,7 +97,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Println("MultiOTP Web Portal for LDAP Users")
-		fmt.Println("Version = 0.0.1")
+		fmt.Println("Version = 0.1.1")
 		// fmt.Println("Usage: <app> [-opt] ...")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()

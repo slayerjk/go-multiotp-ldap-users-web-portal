@@ -16,16 +16,23 @@ func (app *application) routes() http.Handler {
 	// for dynamic pages, see all
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
+	// home (for all)
 	mux.Handle("GET /{$}", dynamic.ThenFunc(app.home))
+
+	// login page (for all)
 	mux.Handle("GET /user/login", dynamic.ThenFunc(app.userLogin))
 	mux.Handle("POST /user/login", dynamic.ThenFunc(app.userLoginPost))
-	// mux.Handle("GET /qr/view", dynamic.ThenFunc(app.qrView))
 
 	// protected pages, only for autenticated users
 	protected := dynamic.Append(app.requireAuthentication)
 
+	// logout (for authenticated user)
 	mux.Handle("POST /user/logout", protected.ThenFunc(app.userLogoutPost))
+
+	// view QR (for authenticated user)
 	mux.Handle("GET /qr/view", protected.ThenFunc(app.qrView))
+
+	// reissue QR (for authenticated user)
 	mux.Handle("GET /qr/reissue", protected.ThenFunc(app.qrReissue))
 
 	// for all pages

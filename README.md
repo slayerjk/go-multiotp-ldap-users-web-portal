@@ -7,9 +7,15 @@ Just to show LDAP users' their QR code and reissue it if needed.
 
 <h2>Thanks</h2>
 
+<h3>Web Server</h3>
+
 **With big thanks to Alex Edwards and his wonderful book: Let's Go(https://lets-go.alexedwards.net/)!**
 
 Web Server logic and all UI static files are taken from this book.
+
+<h3>Overlay JS</h3>
+
+For JS with overlay logic thanks to MS Bing Copilot)).
 
 <h2>Requirements</h2>
 

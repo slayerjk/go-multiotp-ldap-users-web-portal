@@ -1,9 +1,11 @@
 {{define "nav"}}
+<div id="QRReissueOverlay">
+    <b>Дождитесь завершения, не обновляйте страницу!</b>
+</div>
 <nav>
     <div>
-        <a href='/'>Посмотреть свой QR</a>
-         {{if .IsAuthenticated}}
-            <a href='/qr/reissue'>Перевыпустить QR</a>
+        {{if .IsAuthenticated}}
+            <a id="showQRReissueOverlay" href='/qr/reissue'>Перевыпустить QR</a>
         {{end}}
     </div>
     <div>

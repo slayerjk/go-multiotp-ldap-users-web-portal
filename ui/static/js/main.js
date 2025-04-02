@@ -1,4 +1,5 @@
 var navLinks = document.querySelectorAll("nav a");
+
 for (var i = 0; i < navLinks.length; i++) {
 	var link = navLinks[i]
 	if (link.getAttribute('href') == window.location.pathname) {
@@ -6,3 +7,8 @@ for (var i = 0; i < navLinks.length; i++) {
 		break;
 	}
 }
+
+// JavaScript to handle the click event
+document.getElementById('showQRReissueOverlay').addEventListener('click', function() {
+	document.getElementById('QRReissueOverlay').style.display = 'flex';
+});

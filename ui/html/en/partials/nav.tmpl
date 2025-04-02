@@ -1,9 +1,11 @@
 {{define "nav"}}
+<div id="QRReissueOverlay">
+    <b>Please wait, do not refresh the page!</b>
+</div>
 <nav>
     <div>
-        <a href='/'>Check your QR</a>
          {{if .IsAuthenticated}}
-            <a href='/qr/reissue'>Reissue QR</a>
+            <a id="showQRReissueOverlay" href='/qr/reissue'>Reissue QR</a>
         {{end}}
     </div>
     <div>
