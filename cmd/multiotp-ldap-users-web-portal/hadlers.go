@@ -49,10 +49,11 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	// login validation
 	form.CheckField(validator.NotBlank(form.Login), "login", "This field cannot be blank")
 	form.CheckField(validator.Matches(form.Login, validator.LoginRX), "login", "This field must be a valid login")
-	// TODO: Ldap login validation
 
 	// password validation
 	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+
+	//TODO: OTP field validation
 
 	// check errors of form
 	if !form.Valid() {
@@ -96,6 +97,8 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		app.logger.Warn("failed to do get displayName attr", "user", form.Login, slog.Any("error", err))
 	}
 	ldapConn.Close()
+
+	// TODO: add PrivacyIdea validate check
 
 	// renew session token
 	err = app.sessionManager.RenewToken(r.Context())

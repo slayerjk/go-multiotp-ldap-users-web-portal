@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
@@ -34,56 +35,46 @@ type application struct {
 	qrDomainBaseDN       string
 	qrDomainBindUser     string
 	qrDomainBindUserPass string
+	mfaUrl               string
+	mfaTriggerUser       string
+	mfaTriggerUserPass   string
 	lang                 *string
+}
+
+type AppData struct {
+	UserDomainFQDN       string `json:"userDomainFQDN"`
+	UserDomainBaseDN     string `json:"userDomainBaseDN"`
+	QrDomainFQDN         string `json:"qrDomainFQDN"`
+	QrDomainBaseDN       string `json:"qrDomainBaseDN"`
+	QrDomainBindUser     string `json:"qrDomainBindUser"`
+	QrDomainBindUserPass string `json:"qrDomainBindUserPass"`
+	DbUser               string `json:"dbUser"`
+	DbPass               string `json:"dbPass"`
+	MfaUrl               string `json:"mfaUrl"`
+	MfaTriggerUser       string `json:"mfaTriggerUser"`
+	MfaTriggerUserPass   string `json:"mfaTriggerUserPass"`
 }
 
 func main() {
 	var (
-		workDir         string = vafswork.GetExePath()
-		logsPathDefault string = workDir + "/logs" + "_" + appName
-		tlsCertDefault  string = workDir + "/tls" + "/" + "cert.pem"
-		tlsKeyDefault   string = workDir + "/tls" + "/" + "key.pem"
+		workDir              string = vafswork.GetExePath()
+		dataFile             string = workDir + "/data/data.json"
+		logsPathDefault      string = workDir + "/logs" + "_" + appName
+		tlsCertDefault       string = workDir + "/tls" + "/" + "cert.pem"
+		tlsKeyDefault        string = workDir + "/tls" + "/" + "key.pem"
+		userDomainFQDN       string
+		userDomainBaseDN     string
+		qrDomainFQDN         string
+		qrDomainBaseDN       string
+		qrDomainBindUser     string
+		qrDomainBindUserPass string
+		dbUser               string
+		dbPass               string
+		appData              AppData
+		mfaUrl               string
+		mfaTriggerUser       string
+		mfaTriggerUserPass   string
 	)
-
-	// checking Domain data OS env
-	userDomainFQDN, ok := os.LookupEnv("USER_DOM_FQDN")
-	if !ok {
-		fmt.Println("failed to find USER_DOM_FQDN env var")
-		os.Exit(1)
-	}
-	userDomainBaseDN, ok := os.LookupEnv("USER_DOM_BASE")
-	if !ok {
-		fmt.Println("failed to find USER_DOM_BASE env var")
-		os.Exit(1)
-	}
-	qrDomainFQDN, ok := os.LookupEnv("QR_DOM_FQDN")
-	if !ok {
-		fmt.Println("failed to find QR_DOM_FQDN env var")
-		os.Exit(1)
-	}
-	qrDomainBaseDN, ok := os.LookupEnv("QR_DOM_BASE")
-	if !ok {
-		fmt.Println("failed to find QR_DOM_BASE env var")
-		os.Exit(1)
-	}
-	qrDomainBindUser, ok := os.LookupEnv("QR_DOM_BIND_USER")
-	if !ok {
-		fmt.Println("failed to find QR_DOM_BIND_USER env var")
-		os.Exit(1)
-	}
-	qrDomainBindUserPass, ok := os.LookupEnv("QR_DOM_BIND_USER_PASS")
-	if !ok {
-		fmt.Println("failed to find QR_DOM_BIND_USER_PASS env var")
-		os.Exit(1)
-	}
-
-	// checking OS env exists for OTP_DB_USR & OTP_DB_PASS
-	dbUsr := os.Getenv("OTP_DB_USR")
-	dbPass := os.Getenv("OTP_DB_PASS")
-	if len(dbUsr) == 0 || len(dbPass) == 0 {
-		fmt.Println("OTP_DB_USR and/or OTP_DB_PASS not found in OS env! exiting")
-		os.Exit(1)
-	}
 
 	// setting flags
 	logsDir := flag.String("log-dir", logsPathDefault, "set custom log dir")
@@ -94,6 +85,7 @@ func main() {
 	dbName := flag.String("db", "otpportal", "MySQL db name")
 	multiOTPBinPath := flag.String("m", "c:/MultiOTP/windows/multiotp.exe", "Full path to MulitOTP binary")
 	lang := flag.String("lang", "ru", "Set pages languages('ru'/'en' only)")
+	dataFileOn := flag.Bool("df", false, "Use dataFile instead of ENV vars")
 
 	flag.Usage = func() {
 		fmt.Println("MultiOTP Web Portal for LDAP Users")
@@ -103,6 +95,74 @@ func main() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	// dataFile flag is OFF(default)
+	if !*dataFileOn {
+		// checking Domain data OS env
+		userDomainFQDN = os.Getenv("USER_DOM_FQDN")
+		if len(userDomainFQDN) == 0 {
+			fmt.Println("USER_DOM_FQDN not found or empty in OS env! exiting")
+			os.Exit(1)
+		}
+
+		userDomainBaseDN = os.Getenv("USER_DOM_BASE")
+		if len(userDomainBaseDN) == 0 {
+			fmt.Println("USER_DOM_BASE not found or empty in OS env! exiting")
+			os.Exit(1)
+		}
+
+		qrDomainFQDN = os.Getenv("QR_DOM_FQDN")
+		if len(qrDomainFQDN) == 0 {
+			fmt.Println("QR_DOM_FQDN not found or empty in OS env! exiting")
+			os.Exit(1)
+		}
+
+		qrDomainBaseDN = os.Getenv("QR_DOM_BASE")
+		if len(qrDomainBaseDN) == 0 {
+			fmt.Println("QR_DOM_BASE not found or empty in OS env! exiting")
+			os.Exit(1)
+		}
+
+		qrDomainBindUser = os.Getenv("QR_DOM_BIND_USER")
+		if len(qrDomainBindUser) == 0 {
+			fmt.Println("QR_DOM_BIND_USER not found or empty in OS env! exiting")
+			os.Exit(1)
+		}
+
+		qrDomainBindUserPass = os.Getenv("QR_DOM_BIND_USER_PASS")
+		if len(qrDomainBindUserPass) == 0 {
+			fmt.Println("QR_DOM_BIND_USER_PASS not found or empty in OS env! exiting")
+			os.Exit(1)
+		}
+		// checking OS env exists for OTP_DB_USR & OTP_DB_PASS
+		dbUser = os.Getenv("OTP_DB_USR")
+		dbPass = os.Getenv("OTP_DB_PASS")
+		if len(dbUser) == 0 || len(dbPass) == 0 {
+			fmt.Println("OTP_DB_USR and/or OTP_DB_PASS not found in OS env! exiting")
+			os.Exit(1)
+		}
+		// dataFile flag is ON
+	} else {
+		file, err := os.Open(dataFile)
+		if err != nil {
+			fmt.Printf("failed to open data file(%s):\n\t%v", dataFile, err)
+			os.Exit(1)
+		}
+
+		json.NewDecoder(file).Decode(&appData)
+
+		userDomainFQDN = appData.UserDomainFQDN
+		userDomainBaseDN = appData.UserDomainBaseDN
+		qrDomainFQDN = appData.QrDomainFQDN
+		qrDomainBaseDN = appData.QrDomainBaseDN
+		qrDomainBindUser = appData.QrDomainBindUser
+		qrDomainBindUserPass = appData.QrDomainBindUserPass
+		dbUser = appData.DbUser
+		dbPass = appData.DbPass
+		mfaUrl = appData.MfaUrl
+		mfaTriggerUser = appData.MfaTriggerUser
+		mfaTriggerUserPass = appData.MfaTriggerUserPass
+	}
 
 	// create logs dir
 	if err := os.MkdirAll(*logsDir, os.ModePerm); err != nil {
@@ -127,7 +187,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(logFile, nil))
 
 	// setting dsn using OTP_DB_USR, OTP_DB_PASS and dbName
-	dsn := fmt.Sprintf("%s:%s@/%s?parseTime=true", dbUsr, dbPass, *dbName)
+	dsn := fmt.Sprintf("%s:%s@/%s?parseTime=true", dbUser, dbPass, *dbName)
 	// try to open db
 	db, err := openDB(dsn)
 	if err != nil {
@@ -164,6 +224,9 @@ func main() {
 		qrDomainBaseDN:       qrDomainBaseDN,
 		qrDomainBindUser:     qrDomainBindUser,
 		qrDomainBindUserPass: qrDomainBindUserPass,
+		mfaUrl:               mfaUrl,
+		mfaTriggerUser:       mfaTriggerUser,
+		mfaTriggerUserPass:   mfaTriggerUserPass,
 		lang:                 lang,
 	}
 
