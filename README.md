@@ -49,6 +49,7 @@ The app uses env variablse(they MUST exist to operate):
 * OTP_DB_USR - Username of portal's DB
 * OTP_DB_PASS - Password of portal's DB user
 
+
 * 2FA_URL - your PrivacyIdea URL
 * 2FA_TRIGGER_USER - your PrivacyIdea trigger admin
 * 2FA_TRIGGER_PASS - your PrivacyIdea trigger password

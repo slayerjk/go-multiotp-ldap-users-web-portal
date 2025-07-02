@@ -5,7 +5,7 @@
 	"qrDomainBaseDN": "<YOUR MULTI-OTP BASE DN>",
 	"qrDomainBindUser": "<YOUR MULTI-OTP BIND USER>",
 	"qrDomainBindUserPass": "<YOUR MULTI-OTP BIND USER PASS>",
-    "dBUsr": "",
+    "dBUser": "",
     "dbPass": "",
     "mfaUrl": "<YOUR PRIVACYIDEA BASE URL TO AUTH USER(OTP)>",
     "mfaTriggerUser": "<YOUR PRIVACYIDEA TRIGGER USER(ADMIN) TO AUTH USER>",
