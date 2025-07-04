@@ -39,6 +39,7 @@ type application struct {
 	mfaTriggerUser       string
 	mfaTriggerUserPass   string
 	lang                 *string
+	secondFactorOn       *bool
 }
 
 type AppData struct {
@@ -86,10 +87,11 @@ func main() {
 	multiOTPBinPath := flag.String("m", "c:/MultiOTP/windows/multiotp.exe", "Full path to MulitOTP binary")
 	lang := flag.String("lang", "ru", "Set pages languages('ru'/'en' only)")
 	dataFileOn := flag.Bool("df", false, "Use dataFile instead of ENV vars")
+	secondFactorOn := flag.Bool("2fa", false, "Use (PrivacyIdea API) provider for second factor auth")
 
 	flag.Usage = func() {
 		fmt.Println("MultiOTP Web Portal for LDAP Users")
-		fmt.Println("Version = 0.1.0")
+		fmt.Println("Version = 0.3.0")
 		// fmt.Println("Usage: <app> [-opt] ...")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
@@ -134,6 +136,7 @@ func main() {
 			fmt.Println("QR_DOM_BIND_USER_PASS not found or empty in OS env! exiting")
 			os.Exit(1)
 		}
+
 		// checking OS env exists for OTP_DB_USR & OTP_DB_PASS
 		dbUser = os.Getenv("OTP_DB_USR")
 		dbPass = os.Getenv("OTP_DB_PASS")
@@ -141,6 +144,19 @@ func main() {
 			fmt.Println("OTP_DB_USR and/or OTP_DB_PASS not found in OS env! exiting")
 			os.Exit(1)
 		}
+
+		// checking mfa ENV vars
+		if *secondFactorOn {
+			mfaUrl = os.Getenv("2FA_URL")
+			mfaTriggerUser = os.Getenv("2FA_TRIGGER_USER")
+			mfaTriggerUserPass = os.Getenv("2FA_TRIGGER_PASS")
+
+			if len(mfaUrl) == 0 || len(mfaTriggerUser) == 0 || len(mfaTriggerUserPass) == 0 {
+				fmt.Println("one or serveral mfa ENV vars doesn't exist or empty! exiting")
+				os.Exit(1)
+			}
+		}
+
 		// dataFile flag is ON
 	} else {
 		file, err := os.Open(dataFile)
@@ -159,9 +175,18 @@ func main() {
 		qrDomainBindUserPass = appData.QrDomainBindUserPass
 		dbUser = appData.DbUser
 		dbPass = appData.DbPass
-		mfaUrl = appData.MfaUrl
-		mfaTriggerUser = appData.MfaTriggerUser
-		mfaTriggerUserPass = appData.MfaTriggerUserPass
+
+		// checking mfa ENV vars
+		if *secondFactorOn {
+			mfaUrl = appData.MfaUrl
+			mfaTriggerUser = appData.MfaTriggerUser
+			mfaTriggerUserPass = appData.MfaTriggerUserPass
+
+			if len(mfaUrl) == 0 || len(mfaTriggerUser) == 0 || len(mfaTriggerUserPass) == 0 {
+				fmt.Println("one or serveral mfa data not found in data file or empty! exiting")
+				os.Exit(1)
+			}
+		}
 	}
 
 	// create logs dir
@@ -227,6 +252,7 @@ func main() {
 		mfaUrl:               mfaUrl,
 		mfaTriggerUser:       mfaTriggerUser,
 		mfaTriggerUserPass:   mfaTriggerUserPass,
+		secondFactorOn:       secondFactorOn,
 		lang:                 lang,
 	}
 

@@ -121,6 +121,13 @@ ALTER USER '<OTP_DB_USR>'@'localhost' IDENTIFIED BY '<OTP_DB_PASS>';
 * m := MultiOPT exe path; default is "c:/MultiOTP/windows/multiotp.exe"
 * lang - language for all html pages; default is "ru"; other language available is "en"(english)
 * df - use DataFile(data/data.json) instead of default ENV variables
+* 2fa - Use (PrivacyIdea API) provider for second factor auth
+
+<h2>2fa</h2>
+
+For second factor auth PrivacyIdea(3.10.x) API is used.
+
+Thus you need trigger_admin user.
 
 <h2>Localisation</h2>
 
