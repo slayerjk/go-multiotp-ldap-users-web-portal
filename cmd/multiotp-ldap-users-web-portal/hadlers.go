@@ -96,7 +96,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.logger.Warn("failed to do get displayName attr", "user", form.Login, slog.Any("error", err))
 	}
-	ldapConn.Close()
+	defer ldapConn.Close()
 
 	// TODO: add PrivacyIdea validate check
 
@@ -134,31 +134,31 @@ func (app *application) qrView(w http.ResponseWriter, r *http.Request) {
 	// making TLS over LDAP connection
 	ldapConn, err := ldapwork.StartTLSConnWoVerification(app.qrDomainFQDN)
 	if err != nil {
-		ldapConn.Close()
 		app.logger.Error("failed to make QR LDAP TLS connection", slog.Any("error", err))
 		app.render(w, r, http.StatusOK, "view.tmpl", data)
 		return
 	}
+	defer ldapConn.Close()
 
 	// trying to Bind(authenticate via QR LDAP)
 	bindUser := app.qrDomainBindUser + "@" + app.qrDomainFQDN
 	err = ldapwork.LdapBind(ldapConn, bindUser, app.qrDomainBindUserPass)
 	if err != nil {
-		ldapConn.Close()
 		app.logger.Warn("failed to do QR LDAP bind", "user", bindUser, slog.Any("error", err))
 		app.render(w, r, http.StatusOK, "view.tmpl", data)
 		return
 	}
+	defer ldapConn.Close()
 
 	// save sAMAccountName for context
 	filter := fmt.Sprintf("(&(objectClass=user)(samaccountname=*%s))", accName)
 	userSama, err := ldapwork.GetAttr(ldapConn, filter, accName, app.qrDomainBaseDN, "sAMAccountName")
-	ldapConn.Close()
 	if err != nil {
 		app.logger.Warn("failed to do get samaAccountName attr", "user", accName, slog.Any("error", err))
 		app.render(w, r, http.StatusOK, "view.tmpl", data)
 		return
 	}
+	defer ldapConn.Close()
 
 	// Put context of SamaAccount name(to use for reissueQR)
 	app.sessionManager.Put(r.Context(), "QrAcc", userSama)
