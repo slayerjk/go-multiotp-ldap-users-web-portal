@@ -18,6 +18,7 @@ type templateData struct {
 	CSRFToken       string
 	QR              template.HTML // must be <svg> code chunc to insert in template
 	Username        string
+	SecondFactorOn  bool
 }
 
 // Create a humanDate function which returns a human date

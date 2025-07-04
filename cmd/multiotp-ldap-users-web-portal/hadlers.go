@@ -25,6 +25,7 @@ type userLoginForm struct {
 	// Email               string `form:"email"`
 	Login               string `form:"login"`
 	Password            string `form:"password"`
+	OTP                 string `form:"otp"`
 	validator.Validator `form:"-"`
 }
 
@@ -37,7 +38,12 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	// Decode the form data into the userLoginForm struct.
-	var form userLoginForm
+	var (
+		form          userLoginForm
+		blankFieldErr string
+		validLoginErr string
+		validOTPErr   string
+	)
 
 	// decode form
 	err := app.decodePostForm(r, &form)
@@ -46,14 +52,29 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// localization set
+	if *app.lang == "ru" {
+		blankFieldErr = "Это поле не может быть пустым"
+		validLoginErr = "Логин не валидный"
+		validOTPErr = "OTP не валидный"
+	} else {
+		blankFieldErr = "This field cannot be blank"
+		validLoginErr = "This field must be a valid login"
+		validOTPErr = "OTP is not valid"
+	}
+
 	// login validation
-	form.CheckField(validator.NotBlank(form.Login), "login", "This field cannot be blank")
-	form.CheckField(validator.Matches(form.Login, validator.LoginRX), "login", "This field must be a valid login")
+	form.CheckField(validator.NotBlank(form.Login), "login", blankFieldErr)
+	form.CheckField(validator.Matches(form.Login, validator.LoginRX), "login", validLoginErr)
 
 	// password validation
-	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", blankFieldErr)
 
-	//TODO: OTP field validation
+	// OTP field validation
+	if *app.secondFactorOn {
+		form.CheckField(validator.NotBlank(form.OTP), "otp", blankFieldErr)
+		form.CheckField(validator.ValidOTP(form.OTP), "otp", validOTPErr)
+	}
 
 	// check errors of form
 	if !form.Valid() {

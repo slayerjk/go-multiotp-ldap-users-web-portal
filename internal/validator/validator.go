@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -64,6 +65,17 @@ func (v *Validator) CheckField(ok bool, key, message string) {
 // NotBlank() returns true if a value is not an empty string.
 func NotBlank(value string) bool {
 	return strings.TrimSpace(value) != ""
+}
+
+// Check OTP, 6 symbols, all digits
+func ValidOTP(value string) bool {
+	for _, c := range value {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+
+	return len(value) == 6
 }
 
 // MaxChars() returns true if a value contains no more than n characters.

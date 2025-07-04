@@ -129,6 +129,8 @@ For second factor auth PrivacyIdea(3.10.x) API is used.
 
 Thus you need trigger_admin user.
 
+Valid OTP is 6x number all digits string.
+
 <h2>Localisation</h2>
 
 Only Russian & English. Russian is default.
