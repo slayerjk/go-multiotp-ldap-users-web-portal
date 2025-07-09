@@ -43,6 +43,8 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		blankFieldErr string
 		validLoginErr string
 		validOTPErr   string
+		ldapAuthErr   string
+		otpAuthErr    string
 	)
 
 	// decode form
@@ -57,10 +59,14 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		blankFieldErr = "Это поле не может быть пустым"
 		validLoginErr = "Логин не валидный"
 		validOTPErr = "OTP не валидный"
+		ldapAuthErr = "Не верный логин или пароль"
+		otpAuthErr = "Не верный OTP"
 	} else {
 		blankFieldErr = "This field cannot be blank"
 		validLoginErr = "This field must be a valid login"
 		validOTPErr = "OTP is not valid"
+		ldapAuthErr = "Wrong login or password"
+		otpAuthErr = "Wrong OTP"
 	}
 
 	// login validation
@@ -98,10 +104,27 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	err = ldapwork.LdapBind(ldapConn, bindUser, form.Password)
 	// ldapConn, err := app.ldapConnectBind(form.Login, form.Password, app.userDomainFQDN)
 	if err != nil {
-		form.CheckField(false, "login", "Wrong LDAP login or password")
+		form.CheckField(false, "login", ldapAuthErr)
 		app.logger.Warn("failed to do LDAP bind", "user", form.Login, slog.Any("error", err))
 	}
 	defer ldapConn.Close()
+
+	// check errors of form
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl", data)
+		return
+	}
+
+	// OTP auth, if enabled
+	if *app.secondFactorOn {
+		_, err := mfaAuth(app.mfaTriggerUser, app.mfaTriggerUserPass, app.mfaUrl, app.userDomainFQDN, form.Login, form.OTP)
+		if err != nil {
+			form.CheckField(false, "otp", otpAuthErr)
+			app.logger.Warn("failed to do make OTP Auth", slog.Any("error", err))
+		}
+	}
 
 	// check errors of form
 	if !form.Valid() {

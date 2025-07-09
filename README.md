@@ -127,7 +127,7 @@ ALTER USER '<OTP_DB_USR>'@'localhost' IDENTIFIED BY '<OTP_DB_PASS>';
 
 For second factor auth PrivacyIdea(3.10.x) API is used.
 
-Thus you need trigger_admin user.
+Thus you need trigger_admin user - must have rights of Action: <b>token -> tokenlist=true</b>
 
 Valid OTP is 6x number all digits string.
 

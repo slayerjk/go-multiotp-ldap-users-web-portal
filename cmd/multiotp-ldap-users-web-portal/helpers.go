@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
+
+	pidea "github.com/slayerjk/go-pideaapi"
 )
 
 // The serverError helper writes a log entry at Error level (including the request
@@ -128,4 +131,33 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 	}
 
 	return isAuthenticated
+}
+
+// PrivacyIdea: Get user's Token Seril and making Valdate check
+func mfaAuth(apiUser, apiUserPass, pideaUrl, realm, user, otp string) (bool, error) {
+	var result bool = false
+
+	// making httpClient
+	transport := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+	httpClient := http.Client{Transport: transport}
+
+	// getting API token
+	authToken, err := pidea.GetApiToken(&httpClient, pideaUrl, apiUser, apiUserPass)
+	if err != nil {
+		return false, fmt.Errorf("failed to get API token from Pidea: %v; %v", err, authToken)
+	}
+
+	// getting serial
+	serial, err := pidea.GetUserTokenSerial(&httpClient, authToken, pideaUrl, realm, user)
+	if err != nil {
+		return false, fmt.Errorf("failed to get user's token serial from Pidea: %v", err)
+	}
+
+	// making validate check
+	result, err = pidea.ValidateCheck(&httpClient, authToken, pideaUrl, realm, user, serial, otp)
+	if err != nil {
+		return false, fmt.Errorf("failed to get Validate check result from Pidea: %v", err)
+	}
+
+	return result, nil
 }

@@ -10,6 +10,7 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/justinas/nosurf v1.1.1
 	github.com/piglig/go-qr v0.2.6
+	github.com/slayerjk/go-pideaapi v0.0.6
 	github.com/slayerjk/go-vafswork v0.0.3
 	github.com/slayerjk/go-valdapwork v1.2.2
 )
