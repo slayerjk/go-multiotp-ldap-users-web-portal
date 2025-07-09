@@ -34,7 +34,7 @@ For JS with overlay logic thanks to MS Bing Copilot)).
 
 <h2>Enviroment Variables</h2>
 
-IF you don't use 'df' flag!
+<b>IF you don't use 'df' flag!</b>
 
 The app uses env variablse(they MUST exist to operate):
 * USER_DOM_FQDN - FQDN of Users' Domain(to authenticate in portal)
@@ -56,7 +56,7 @@ The app uses env variablse(they MUST exist to operate):
 
 <h2>data.json</h2>
 
-IF you use 'df' flag
+<b>IF you use 'df' flag</b>
 
 Example of data/data.json 
 
@@ -87,7 +87,8 @@ DB user and DB pass must be set in OS env:
 
 Db must be on local server(for now). 
 
-"otpportal" is default name for db.
+"otpportal" is default name for db. 
+<b>Use -db flag to change default DB name</b>
 
 Sqlscript:
 ```
@@ -127,7 +128,7 @@ ALTER USER '<OTP_DB_USR>'@'localhost' IDENTIFIED BY '<OTP_DB_PASS>';
 
 For second factor auth PrivacyIdea(3.10.x) API is used.
 
-Thus you need trigger_admin user - must have rights of Action: <b>token -> tokenlist=true</b>
+Thus you need trigger admin user added in your PrivacyIdea - and must have rights(policy) of Action: <b>token -> tokenlist=true</b>
 
 Valid OTP is 6x number all digits string.
 
@@ -140,7 +141,7 @@ Control with flag "lang" ("ru" or "en").
 
 1) User(domain user) tries to authenticate USER_DOM_ fqdn, basedn and login/pass creds.
 
-The app tries to do LDAPS bind, if success:
+The app tries to do LDAPS bind(and 2fa(OTP) is -2fa flag is set), if success:
 
 get user's DisplayName attribute(to show on page) and -> login to page with their QR.
 

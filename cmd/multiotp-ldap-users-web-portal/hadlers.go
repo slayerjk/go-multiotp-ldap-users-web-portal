@@ -100,6 +100,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// trying to Bind(authenticate via LDAP)
+	app.logger.Info("making LDAP BIND", "user", form.Login)
 	bindUser := form.Login + "@" + app.userDomainFQDN
 	err = ldapwork.LdapBind(ldapConn, bindUser, form.Password)
 	// ldapConn, err := app.ldapConnectBind(form.Login, form.Password, app.userDomainFQDN)
@@ -118,6 +119,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// OTP auth, if enabled
+	app.logger.Info("making PrivacyIdea validate check of given user's OTP", "user", form.Login)
 	if *app.secondFactorOn {
 		_, err := mfaAuth(app.mfaTriggerUser, app.mfaTriggerUserPass, app.mfaUrl, app.userDomainFQDN, form.Login, form.OTP)
 		if err != nil {
