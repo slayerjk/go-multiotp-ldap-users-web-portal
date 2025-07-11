@@ -32,52 +32,6 @@ For JS with overlay logic thanks to MS Bing Copilot)).
 * Go version: 1.24
 * Tested on MultiOTP version: 5.9.8.0. Must work on later releases(but not tested yet).
 
-<h2>Enviroment Variables</h2>
-
-<b>IF you don't use 'df' flag!</b>
-
-The app uses env variablse(they MUST exist to operate):
-* USER_DOM_FQDN - FQDN of Users' Domain(to authenticate in portal)
-* USER_DOM_BASE - Base DN of Users' Domain(to authenticate in portal)
-
-* QR_DOM_FQDN - MultiOTP's Domain FQDN(to show user's QR)
-* QR_DOM_BASE - MultiOTP's Domain Base DN (to show user's QR)
-
-* QR_DOM_BIND_USER - MultiOTP's Domain Bind User(just login name, not all CN) (to search for user's samaAccName)
-* QR_DOM_BIND_USER_PASS - MultiOTP's Domain Bind User Password (to search for user's samaAccName)
-
-* OTP_DB_USR - Username of portal's DB
-* OTP_DB_PASS - Password of portal's DB user
-
-
-* 2FA_URL - your PrivacyIdea URL
-* 2FA_TRIGGER_USER - your PrivacyIdea trigger admin
-* 2FA_TRIGGER_PASS - your PrivacyIdea trigger password
-
-<h2>data.json</h2>
-
-<b>IF you use 'df' flag</b>
-
-Example of data/data.json 
-
-```
-{
-    "userDomainFQDN": "<YOUR FQDN TO AUTH USER>",
-	"userDomainBaseDN": "<YOUR DOMAIN BASE DN TO AUTH USER",
-	"qrDomainFQDN": "<YOUR MULTI-OTP FQDN>",
-	"qrDomainBaseDN": "<YOUR MULTI-OTP BASE DN>",
-	"qrDomainBindUser": "<YOUR MULTI-OTP BIND USER>",
-	"qrDomainBindUserPass": "<YOUR MULTI-OTP BIND USER PASS>",
-    "dBUsr": "",
-    "dbPass": "",
-    "mfaUrl": "<YOUR PRIVACYIDEA BASE URL TO AUTH USER(OTP)>",
-    "mfaTriggerUser": "<YOUR PRIVACYIDEA TRIGGER USER(ADMIN) TO AUTH USER>",
-    "mfaTriggerUserPass": "<YOUR PRIVACYIDEA TRIGGER USER(ADMIN) PASS>"
-}
-```
-
-Rename data_BLANK.json to data.json before use!
-
 <h2>DB</h2>
 
 Used MySQL Db. Must be installed and set.
@@ -121,8 +75,56 @@ ALTER USER '<OTP_DB_USR>'@'localhost' IDENTIFIED BY '<OTP_DB_PASS>';
 * db - MySQL db name; default is "otpportal"
 * m := MultiOPT exe path; default is "c:/MultiOTP/windows/multiotp.exe"
 * lang - language for all html pages; default is "ru"; other language available is "en"(english)
-* df - use DataFile(data/data.json) instead of default ENV variables
+* df - Use embed dataFile(placed in 'data/data.json') instead of ENV vars
 * 2fa - Use (PrivacyIdea API) provider for second factor auth
+
+<h3>Enviroment Variables</h3>
+
+<b>IF you don't use 'df' flag!</b>
+
+The app uses env variablse(they MUST exist to operate):
+* USER_DOM_FQDN - FQDN of Users' Domain(to authenticate in portal)
+* USER_DOM_BASE - Base DN of Users' Domain(to authenticate in portal)
+
+* QR_DOM_FQDN - MultiOTP's Domain FQDN(to show user's QR)
+* QR_DOM_BASE - MultiOTP's Domain Base DN (to show user's QR)
+
+* QR_DOM_BIND_USER - MultiOTP's Domain Bind User(just login name, not all CN) (to search for user's samaAccName)
+* QR_DOM_BIND_USER_PASS - MultiOTP's Domain Bind User Password (to search for user's samaAccName)
+
+* OTP_DB_USR - Username of portal's DB
+* OTP_DB_PASS - Password of portal's DB user
+
+
+* 2FA_URL - your PrivacyIdea URL
+* 2FA_TRIGGER_USER - your PrivacyIdea trigger admin
+* 2FA_TRIGGER_PASS - your PrivacyIdea trigger password
+
+<h3>data/data.json</h3>
+
+<b>IF you use 'df' flag</b>
+
+Example of data/data.json
+
+```
+{
+    "userDomainFQDN": "<YOUR FQDN TO AUTH USER>",
+	"userDomainBaseDN": "<YOUR DOMAIN BASE DN TO AUTH USER",
+	"qrDomainFQDN": "<YOUR MULTI-OTP FQDN>",
+	"qrDomainBaseDN": "<YOUR MULTI-OTP BASE DN>",
+	"qrDomainBindUser": "<YOUR MULTI-OTP BIND USER>",
+	"qrDomainBindUserPass": "<YOUR MULTI-OTP BIND USER PASS>",
+    "dBUsr": "",
+    "dbPass": "",
+    "mfaUrl": "<YOUR PRIVACYIDEA BASE URL TO AUTH USER(OTP)>",
+    "mfaTriggerUser": "<YOUR PRIVACYIDEA TRIGGER USER(ADMIN) TO AUTH USER>",
+    "mfaTriggerUserPass": "<YOUR PRIVACYIDEA TRIGGER USER(ADMIN) PASS>"
+}
+```
+
+data/data.json will be embed using <b>data/dataembed.go</b>.
+
+Rename <b>data_BLANK.json</b> to data.json before use!
 
 <h2>2fa</h2>
 

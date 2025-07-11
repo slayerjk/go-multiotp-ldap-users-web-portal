@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -18,6 +19,8 @@ import (
 	"github.com/slayerjk/go-vafswork"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	dataembed "github.com/slayerjk/go-multiotp-ldap-users-web-portal/data"
 )
 
 const appName = "OTP-Portal"
@@ -59,7 +62,6 @@ type AppData struct {
 func main() {
 	var (
 		workDir              string = vafswork.GetExePath()
-		dataFile             string = workDir + "/data/data.json"
 		logsPathDefault      string = workDir + "/logs" + "_" + appName
 		tlsCertDefault       string = workDir + "/tls" + "/" + "cert.pem"
 		tlsKeyDefault        string = workDir + "/tls" + "/" + "key.pem"
@@ -86,12 +88,12 @@ func main() {
 	dbName := flag.String("db", "otpportal", "MySQL db name")
 	multiOTPBinPath := flag.String("m", "c:/MultiOTP/windows/multiotp.exe", "Full path to MulitOTP binary")
 	lang := flag.String("lang", "ru", "Set pages languages('ru'/'en' only)")
-	dataFileOn := flag.Bool("df", false, "Use dataFile instead of ENV vars")
+	dataFileOn := flag.Bool("df", false, "Use embed dataFile(placed in 'data/data.json') instead of ENV vars")
 	secondFactorOn := flag.Bool("2fa", false, "Use (PrivacyIdea API) provider for second factor auth")
 
 	flag.Usage = func() {
 		fmt.Println("MultiOTP Web Portal for LDAP Users")
-		fmt.Println("Version = 0.3.3")
+		fmt.Println("Version = 0.3.4")
 		// fmt.Println("Usage: <app> [-opt] ...")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
@@ -157,15 +159,13 @@ func main() {
 			}
 		}
 
-		// dataFile flag is ON
+		// if dataFile flag is ON use embed data.json
 	} else {
-		file, err := os.Open(dataFile)
+		err := json.Unmarshal(dataembed.DataFileBytes, &appData)
 		if err != nil {
-			fmt.Printf("failed to open data file(%s):\n\t%v", dataFile, err)
+			fmt.Printf("can't process data file:\n\t%v", err)
 			os.Exit(1)
 		}
-
-		json.NewDecoder(file).Decode(&appData)
 
 		userDomainFQDN = appData.UserDomainFQDN
 		userDomainBaseDN = appData.UserDomainBaseDN

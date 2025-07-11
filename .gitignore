@@ -24,3 +24,5 @@
 !ui/static/img/favicon.ico
 !ui/static/img/logo.png
 !ui/static/js/main.js
+
+!data/dataembed.go
