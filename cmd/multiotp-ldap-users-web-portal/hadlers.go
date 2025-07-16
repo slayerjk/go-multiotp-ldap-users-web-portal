@@ -119,8 +119,8 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// OTP auth, if enabled
-	app.logger.Info("making PrivacyIdea validate check of given user's OTP", "user", form.Login)
 	if *app.secondFactorOn {
+		app.logger.Info("making PrivacyIdea validate check of given user's OTP", "user", form.Login)
 		_, err := mfaAuth(app.mfaTriggerUser, app.mfaTriggerUserPass, app.mfaUrl, app.userDomainFQDN, form.Login, form.OTP)
 		if err != nil {
 			form.CheckField(false, "otp", otpAuthErr)

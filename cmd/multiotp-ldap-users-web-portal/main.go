@@ -92,40 +92,12 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Println("MultiOTP Web Portal for LDAP Users")
-		fmt.Println("Version = 0.3.5")
+		fmt.Println("Version = 0.3.6")
 		// fmt.Println("Usage: <app> [-opt] ...")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-
-	// processing data file
-	err := json.Unmarshal(dataembed.DataFileBytes, &appData)
-	if err != nil {
-		fmt.Printf("can't process data file:\n\t%v", err)
-		os.Exit(1)
-	}
-
-	userDomainFQDN = appData.UserDomainFQDN
-	userDomainBaseDN = appData.UserDomainBaseDN
-	qrDomainFQDN = appData.QrDomainFQDN
-	qrDomainBaseDN = appData.QrDomainBaseDN
-	qrDomainBindUser = appData.QrDomainBindUser
-	qrDomainBindUserPass = appData.QrDomainBindUserPass
-	dbUser = appData.DbUser
-	dbPass = appData.DbPass
-
-	// checking mfa ENV vars
-	if *secondFactorOn {
-		mfaUrl = appData.MfaUrl
-		mfaTriggerUser = appData.MfaTriggerUser
-		mfaTriggerUserPass = appData.MfaTriggerUserPass
-
-		if len(mfaUrl) == 0 || len(mfaTriggerUser) == 0 || len(mfaTriggerUserPass) == 0 {
-			fmt.Println("one or serveral mfa data not found in data file or empty! exiting")
-			os.Exit(1)
-		}
-	}
 
 	// create logs dir
 	if err := os.MkdirAll(*logsDir, os.ModePerm); err != nil {
@@ -148,6 +120,40 @@ func main() {
 
 	// set slog.Logger
 	logger := slog.New(slog.NewTextHandler(logFile, nil))
+
+	// processing data file
+	err = json.Unmarshal(dataembed.DataFileBytes, &appData)
+	if err != nil {
+		fmt.Printf("can't process data file:\n\t%v", err)
+		os.Exit(1)
+	}
+
+	userDomainFQDN = appData.UserDomainFQDN
+	userDomainBaseDN = appData.UserDomainBaseDN
+	qrDomainFQDN = appData.QrDomainFQDN
+	qrDomainBaseDN = appData.QrDomainBaseDN
+	qrDomainBindUser = appData.QrDomainBindUser
+	qrDomainBindUserPass = appData.QrDomainBindUserPass
+	dbUser = appData.DbUser
+	dbPass = appData.DbPass
+
+	// checking mfa ENV vars
+	if *secondFactorOn {
+		mfaUrl = appData.MfaUrl
+		mfaTriggerUser = appData.MfaTriggerUser
+		mfaTriggerUserPass = appData.MfaTriggerUserPass
+
+		if len(mfaUrl) == 0 || len(mfaTriggerUser) == 0 || len(mfaTriggerUserPass) == 0 {
+			logger.Error("one or serveral mfa data not found in data file or empty! exiting")
+			os.Exit(1)
+		}
+	}
+
+	// check if multiOTPBinPath is exist
+	if _, err := os.Stat(*multiOTPBinPath); err != nil {
+		logger.Error("failed to finde MultiOTP binary file", "multiOTPBinPath", *multiOTPBinPath)
+		os.Exit(1)
+	}
 
 	// setting dsn using OTP_DB_USR, OTP_DB_PASS and dbName
 	dsn := fmt.Sprintf("%s:%s@/%s?parseTime=true", dbUser, dbPass, *dbName)
