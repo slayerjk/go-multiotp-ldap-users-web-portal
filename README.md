@@ -22,7 +22,7 @@ For JS with overlay logic thanks to MS Bing Copilot)).
 * The app must be located on the same host as MultiOTP service
 * The app demands MySQL db. Check "DB" section below
 * The app uses TLS for web, so you need cert file and key file
-* The app uses environment variables, check below
+* The app uses embed data file, described in 'data/data.json'
 * The works with LDAP users only:
     * One domain to auth users in portal
     * Another is the domain MultiOTP bound with(<b>may be the same as for user auth</b>)
@@ -75,34 +75,9 @@ ALTER USER '<OTP_DB_USR>'@'localhost' IDENTIFIED BY '<OTP_DB_PASS>';
 * db - MySQL db name; default is "otpportal"
 * m := MultiOPT exe path; default is "c:/MultiOTP/windows/multiotp.exe"
 * lang - language for all html pages; default is "ru"; other language available is "en"(english)
-* df - Use embed dataFile(placed in 'data/data.json') instead of ENV vars
 * 2fa - Use (PrivacyIdea API) provider for second factor auth
 
-<h3>Enviroment Variables</h3>
-
-<b>IF you don't use 'df' flag!</b>
-
-The app uses env variablse(they MUST exist to operate):
-* USER_DOM_FQDN - FQDN of Users' Domain(to authenticate in portal)
-* USER_DOM_BASE - Base DN of Users' Domain(to authenticate in portal)
-
-* QR_DOM_FQDN - MultiOTP's Domain FQDN(to show user's QR)
-* QR_DOM_BASE - MultiOTP's Domain Base DN (to show user's QR)
-
-* QR_DOM_BIND_USER - MultiOTP's Domain Bind User(just login name, not all CN) (to search for user's samaAccName)
-* QR_DOM_BIND_USER_PASS - MultiOTP's Domain Bind User Password (to search for user's samaAccName)
-
-* OTP_DB_USR - Username of portal's DB
-* OTP_DB_PASS - Password of portal's DB user
-
-
-* 2FA_URL - your PrivacyIdea URL
-* 2FA_TRIGGER_USER - your PrivacyIdea trigger admin
-* 2FA_TRIGGER_PASS - your PrivacyIdea trigger password
-
 <h3>data/data.json</h3>
-
-<b>IF you use 'df' flag</b>
 
 Example of data/data.json
 
