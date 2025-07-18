@@ -92,7 +92,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Println("MultiOTP Web Portal for LDAP Users")
-		fmt.Println("Version = 0.3.6")
+		fmt.Println("Version = 0.3.7")
 		// fmt.Println("Usage: <app> [-opt] ...")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
@@ -137,7 +137,7 @@ func main() {
 	dbUser = appData.DbUser
 	dbPass = appData.DbPass
 
-	// checking mfa ENV vars
+	// checking mfa vars
 	if *secondFactorOn {
 		mfaUrl = appData.MfaUrl
 		mfaTriggerUser = appData.MfaTriggerUser
@@ -151,7 +151,19 @@ func main() {
 
 	// check if multiOTPBinPath is exist
 	if _, err := os.Stat(*multiOTPBinPath); err != nil {
-		logger.Error("failed to finde MultiOTP binary file", "multiOTPBinPath", *multiOTPBinPath)
+		logger.Error("failed to find MultiOTP binary file", "multiOTPBinPath", *multiOTPBinPath)
+		os.Exit(1)
+	}
+
+	// check if TLS cert exists
+	if _, err := os.Stat(*tlsCert); err != nil {
+		logger.Error("failed to find TLS cert file", "tlsCert", *tlsCert)
+		os.Exit(1)
+	}
+
+	// check if TLS key exists
+	if _, err := os.Stat(*tlsKey); err != nil {
+		logger.Error("failed to find TLS key file", "tlsCert", *tlsKey)
 		os.Exit(1)
 	}
 
